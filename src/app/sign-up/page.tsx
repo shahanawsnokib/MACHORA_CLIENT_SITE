@@ -21,20 +21,35 @@ import { signUp } from "@/lib/auth-client";
 
 export default function SignUpPage() {
   const router = useRouter();
+
+  // Keep each form value in state so validation and sign-up can read it.
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [image, setImage] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+
+  // These values control the password button, submit button, and error message.
   const [showPassword, setShowPassword] = useState(false);
   const [isPending, setIsPending] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
+  // Runs when the user submits the registration form.
   async function handleSignUp(event: FormEvent<HTMLFormElement>) {
+    // Keep the browser from reloading the page; React handles the form instead.
     event.preventDefault();
     setErrorMessage("");
 
-    if (password.length < 6 || !/[A-Z]/.test(password) || !/[a-z]/.test(password)) {
+    // Check the fields before sending them to the authentication service.
+    if (!name.trim()) {
+      setErrorMessage("Please enter your name.");
+      return;
+    }
+
+    const hasUppercase = /[A-Z]/.test(password);
+    const hasLowercase = /[a-z]/.test(password);
+
+    if (password.length < 6 || !hasUppercase || !hasLowercase) {
       setErrorMessage(
         "Use at least 6 characters, including an uppercase and a lowercase letter.",
       );
@@ -46,26 +61,30 @@ export default function SignUpPage() {
       return;
     }
 
+    // Disable the button while Better Auth is processing the request.
     setIsPending(true);
 
     try {
+      // Send the registration details. The profile image is optional.
       const result = await signUp.email({
         name: name.trim(),
-        email,
+        email: email.trim(),
         password,
         image: image.trim() || undefined,
         callbackURL: "/",
       });
 
+      // Show the authentication service's error without leaving the form.
       if (result.error) {
         setErrorMessage(
-          result.error.message || "Unable to create your account. Please try again.",
+          result.error.message ||
+            "Unable to create your account. Please try again.",
         );
         return;
       }
 
+      // The account was created, so send the user to the home page.
       router.replace("/");
-      router.refresh();
     } catch (error) {
       setErrorMessage(
         error instanceof Error
@@ -75,6 +94,7 @@ export default function SignUpPage() {
     } finally {
       setIsPending(false);
     }
+
   }
 
   return (
@@ -135,7 +155,7 @@ export default function SignUpPage() {
               </p>
             </div>
 
-            <form onSubmit={handleSignUp}>
+            <form onSubmit={handleSignUp} autoComplete="on">
               <FieldGroup className="gap-4">
                 <Field>
                   <FieldLabel

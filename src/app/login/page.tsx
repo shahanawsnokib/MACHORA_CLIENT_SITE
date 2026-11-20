@@ -27,29 +27,38 @@ type PendingAction = "email" | SocialProvider | null;
 
 export default function LoginPage() {
   const router = useRouter();
+
+  // Keep the user's email and password available for the sign-in request.
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
+  // Track which button is busy, whether the password is visible, and any error.
   const [showPassword, setShowPassword] = useState(false);
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
   const [errorMessage, setErrorMessage] = useState("");
 
+  // Submit email and password to Better Auth.
   async function handleEmailSignIn(event: FormEvent<HTMLFormElement>) {
+    // Prevent a full browser reload so we can handle the result here.
     event.preventDefault();
     setErrorMessage("");
     setPendingAction("email");
 
     try {
+      // Ask Better Auth to sign in and return to the home page on success.
       const result = await signIn.email({
         email,
         password,
         callbackURL: "/",
       });
 
+      // Keep the user on this page and show a useful message if sign-in fails.
       if (result.error) {
         setErrorMessage(result.error.message || "Unable to sign in. Please try again.");
         return;
       }
 
+      // Replace the login page with the home page after successful sign-in.
       router.replace("/");
       router.refresh();
     } catch (error) {
@@ -63,6 +72,7 @@ export default function LoginPage() {
     }
   }
 
+  // Start Google or GitHub sign-in. Better Auth handles the provider redirect.
   async function handleSocialSignIn(provider: SocialProvider) {
     setErrorMessage("");
     setPendingAction(provider);
