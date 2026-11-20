@@ -15,9 +15,9 @@ import { useState } from "react";
 
 const navigation = [
   { label: "Home", href: "/" },
-  { label: "Equipment", href: "/equipment" },
-  { label: "How it works", href: "/how-it-works" },
-  { label: "For owners", href: "/about" },
+  { label: "Equipment", href: "/browse_equipment" },
+  { label: "How it works", href: "/how_it_works" },
+  { label: "For owners", href: "/list_equipement" },
 ];
 
 export default function Navbar() {
@@ -77,7 +77,7 @@ export default function Navbar() {
 
         <div className="ml-5 hidden items-center border-l border-white/[0.08] pl-5 lg:flex">
           <Link
-            href="/equipment"
+            href="/browse_equipment"
             aria-label="Search equipment"
             className="mr-2 grid h-10 w-10 place-items-center rounded-full text-[#c2ccc0] transition-colors hover:bg-white/[0.06] hover:text-[#c8e889]"
           >
@@ -111,7 +111,7 @@ export default function Navbar() {
                 Login
               </Link>
               <Link
-                href="/register"
+                href="/sign-up"
                 className="group flex h-11 items-center gap-2 rounded-full bg-[#c8e889] px-5 text-[13px] font-black text-[#1c281e] shadow-[0_10px_24px_rgba(0,0,0,0.2)] transition-all hover:-translate-y-0.5 hover:bg-[#d7f39d]"
               >
                 Join MACHORA
@@ -185,7 +185,7 @@ export default function Navbar() {
                     Login
                   </Link>
                   <Link
-                    href="/register"
+                    href="/sign-up"
                     onClick={closeMenu}
                     className="flex h-12 items-center justify-center rounded-xl bg-[#c8e889] text-sm font-black text-[#1c281e]"
                   >

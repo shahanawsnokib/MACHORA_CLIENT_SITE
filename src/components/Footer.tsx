@@ -5,19 +5,19 @@ const groups = [
   {
     title: "Explore",
     links: [
-      ["Browse equipment", "/equipment"],
-      ["How it works", "/how-it-works"],
-      ["Popular categories", "/equipment"],
-      ["Recently added", "/equipment"],
+      ["Browse equipment", "/browse_equipment"],
+      ["How it works", "/how_it_works"],
+      ["Popular categories", "/popular_categories"],
+      ["Recently added", "/recently-added"],
     ],
   },
   {
     title: "MACHORA",
     links: [
-      ["About us", "/about"],
-      ["List equipment", "/register"],
+      ["About us", "/about-us"],
+      ["List equipment", "/list_equipement"],
       ["Contact", "/contact"],
-      ["Rental terms", "/terms"],
+      ["Rental terms", "/rental-tearms"],
     ],
   },
 ];
@@ -104,7 +104,7 @@ export default function Footer() {
           <p>&copy; {new Date().getFullYear()} MACHORA Marketplace</p>
           <div className="flex gap-5">
             <Link href="/privacy" className="hover:text-[#eef1e8]">Privacy</Link>
-            <Link href="/terms" className="hover:text-[#eef1e8]">Terms</Link>
+            <Link href="/rental-tearms" className="hover:text-[#eef1e8]">Terms</Link>
             <span>Built for Bangladesh</span>
           </div>
         </div>

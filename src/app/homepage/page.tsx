@@ -86,7 +86,7 @@ function HomePage() {
               </p>
 
               <form
-                action="/equipment"
+                action="/browse_equipment"
                 className="mt-8 flex max-w-[570px] items-center gap-2 rounded-2xl border border-white/[0.1] bg-[#111814]/85 p-2 shadow-[0_24px_70px_rgba(0,0,0,0.26)] backdrop-blur-md sm:rounded-full"
               >
                 <MapPin className="ml-3 shrink-0 text-[#9eae99]" size={18} />
@@ -185,7 +185,7 @@ function HomePage() {
             </p>
           </div>
           <Link
-            href="/equipment"
+            href="/browse_equipment"
             className="mb-1 hidden items-center gap-2 text-sm font-semibold text-[#d3e2ca] transition-colors hover:text-[#c8e889] sm:flex"
           >
             View all equipment
@@ -197,7 +197,7 @@ function HomePage() {
           {categories.map(({ name, count, mark, icon: Icon, tone }) => (
             <Link
               key={name}
-              href="/equipment"
+              href="/browse_equipment"
               className={`group relative min-h-[200px] overflow-hidden rounded-[22px] border border-white/[0.075] bg-gradient-to-br ${tone} p-5 transition-all duration-300 hover:-translate-y-1 hover:border-[#c8e889]/30 sm:min-h-[235px] sm:rounded-[26px] sm:p-6`}
             >
               <span className="absolute right-4 top-4 text-[10px] font-bold tracking-[0.15em] text-white/35">
@@ -226,7 +226,7 @@ function HomePage() {
         </div>
 
         <Link
-          href="/equipment"
+          href="/browse_equipment"
           className="mt-5 flex items-center justify-center gap-2 rounded-xl border border-white/[0.08] py-3.5 text-sm font-semibold text-[#d3e2ca] sm:hidden"
         >
           Browse all equipment
@@ -251,7 +251,7 @@ function HomePage() {
             </p>
           </div>
           <Link
-            href="/register"
+            href="/list_equipement"
             className="relative mt-7 inline-flex h-12 items-center justify-center gap-2 rounded-full bg-[#c8e889] px-5 text-sm font-bold text-[#1c281e] transition-colors hover:bg-[#d7f39d] lg:mt-0"
           >
             List your equipment
