@@ -10,6 +10,7 @@ import {
   Mail,
   ShieldCheck,
 } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -285,7 +286,13 @@ export default function LoginPage() {
             </form>
 
             <p className="mt-6 text-center text-xs leading-5 text-[#849186]">
-              Secure access for renters and equipment owners.
+              New to MACHORA?{" "}
+              <Link
+                href="/sign-up"
+                className="font-semibold text-[#c8e889] underline-offset-4 hover:underline"
+              >
+                Create an account
+              </Link>
             </p>
           </div>
         </section>

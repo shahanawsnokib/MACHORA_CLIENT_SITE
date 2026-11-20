@@ -8,9 +8,10 @@ const db = client.db("machineRentbd");
 export const auth = betterAuth({
   baseURL: process.env.BETTER_AUTH_LOCAL_URL,
       //...other options
-  emailAndPassword: { 
-    enabled: true, 
-  }, 
+  emailAndPassword: {
+    enabled: true,
+    minPasswordLength: 6,
+  },
   socialProviders: { 
     github: { 
       clientId: process.env.GITHUB_CLIENT_ID as string, 
