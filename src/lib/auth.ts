@@ -14,9 +14,9 @@ export const auth = betterAuth({
   user: {
     additionalFields: {
       role: {
-        type: ["Admin", "Buyer", "Provider"],
+        type: ["Customer", "Owner", "Admin"],
         required: true,
-        defaultValue: "Buyer",
+        defaultValue: "Customer",
         input: true,
       },
     },
@@ -25,10 +25,12 @@ export const auth = betterAuth({
     github: {
       clientId: process.env.GITHUB_CLIENT_ID as string,
       clientSecret: process.env.GITHUB_CLIENT_SECRET as string,
+      mapProfileToUser: () => ({ role: "Customer" }),
     },
     google: {
       clientId: process.env.GOOGLE_CLIENT_ID as string,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+      mapProfileToUser: () => ({ role: "Customer" }),
     },
   },
   database: mongodbAdapter(db, {

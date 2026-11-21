@@ -19,7 +19,7 @@ import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { signUp } from "@/lib/auth-client";
 
-const accountRoles = ["Admin", "Buyer", "Provider"] as const;
+const accountRoles = ["Customer", "Owner", "Admin"] as const;
 type AccountRole = (typeof accountRoles)[number];
 
 export default function SignUpPage() {
@@ -30,8 +30,7 @@ export default function SignUpPage() {
   const [image, setImage] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [role, setRole] = useState<AccountRole>("Buyer");
-
+  const [role, setRole] = useState<AccountRole>("Customer");
   const [showPassword, setShowPassword] = useState(false);
   const [isPending, setIsPending] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -210,6 +209,34 @@ export default function SignUpPage() {
 
                 <Field>
                   <FieldLabel
+                    htmlFor="image"
+                    className="mb-2 text-xs font-semibold text-[#cbd4c8]"
+                  >
+                    Profile image URL{" "}
+                    <span className="font-normal text-[#78867b]">(optional)</span>
+                  </FieldLabel>
+                  <div className="relative">
+                    <ImagePlus
+                      aria-hidden="true"
+                      size={16}
+                      className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[#78867b]"
+                    />
+                    <Input
+                      id="image"
+                      name="image"
+                      type="url"
+                      autoComplete="url"
+                      placeholder="https://example.com/photo.jpg"
+                      value={image}
+                      onChange={(event) => setImage(event.target.value)}
+                      disabled={isPending}
+                      className="h-12 rounded-xl border-white/[0.1] bg-[#111713]/70 pl-10 text-sm text-[#f0f2ec] placeholder:text-[#68756b] focus-visible:border-[#c8e889]/50 focus-visible:ring-[#c8e889]/20"
+                    />
+                  </div>
+                </Field>
+
+                <Field>
+                  <FieldLabel
                     htmlFor="role"
                     className="mb-2 text-xs font-semibold text-[#cbd4c8]"
                   >
@@ -235,34 +262,6 @@ export default function SignUpPage() {
                       </option>
                     ))}
                   </select>
-                </Field>
-
-                <Field>
-                  <FieldLabel
-                    htmlFor="image"
-                    className="mb-2 text-xs font-semibold text-[#cbd4c8]"
-                  >
-                    Profile image URL{" "}
-                    <span className="font-normal text-[#78867b]">(optional)</span>
-                  </FieldLabel>
-                  <div className="relative">
-                    <ImagePlus
-                      aria-hidden="true"
-                      size={16}
-                      className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[#78867b]"
-                    />
-                    <Input
-                      id="image"
-                      name="image"
-                      type="url"
-                      autoComplete="url"
-                      placeholder="https://example.com/photo.jpg"
-                      value={image}
-                      onChange={(event) => setImage(event.target.value)}
-                      disabled={isPending}
-                      className="h-12 rounded-xl border-white/[0.1] bg-[#111713]/70 pl-10 text-sm text-[#f0f2ec] placeholder:text-[#68756b] focus-visible:border-[#c8e889]/50 focus-visible:ring-[#c8e889]/20"
-                    />
-                  </div>
                 </Field>
 
                 <Field>

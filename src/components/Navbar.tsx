@@ -30,6 +30,7 @@ type AccountMenuProps = {
     name: string;
     email: string;
     image?: string | null;
+    role?: "Customer" | "Owner" | "Admin";
   };
   isSigningOut: boolean;
   signOutError: string;
@@ -43,6 +44,12 @@ function AccountMenu({
   onSignOut,
 }: AccountMenuProps) {
   const firstInitial = user.name.trim().charAt(0).toUpperCase();
+  const dashboardHref =
+    user.role === "Admin"
+      ? "/deshBoard/admin"
+      : user.role === "Owner"
+        ? "/deshBoard/owner"
+        : "/deshBoard/customer";
 
   return (
     <details className="group relative">
@@ -71,6 +78,14 @@ function AccountMenu({
         >
           Profile
         </Link>
+        {user.role && (
+          <Link
+            href={dashboardHref}
+            className="flex h-10 items-center rounded-xl px-3 text-sm font-semibold text-[#dce4d9] transition-colors hover:bg-white/[0.06] hover:text-[#c8e889]"
+          >
+            Dashboard
+          </Link>
+        )}
         <button
           type="button"
           onClick={onSignOut}
