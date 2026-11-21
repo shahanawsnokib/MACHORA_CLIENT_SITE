@@ -19,28 +19,27 @@ import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { signUp } from "@/lib/auth-client";
 
+const accountRoles = ["Admin", "Buyer", "Provider"] as const;
+type AccountRole = (typeof accountRoles)[number];
+
 export default function SignUpPage() {
   const router = useRouter();
 
-  // Keep each form value in state so validation and sign-up can read it.
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [image, setImage] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [role, setRole] = useState<AccountRole>("Buyer");
 
-  // These values control the password button, submit button, and error message.
   const [showPassword, setShowPassword] = useState(false);
   const [isPending, setIsPending] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
-  // Runs when the user submits the registration form.
   async function handleSignUp(event: FormEvent<HTMLFormElement>) {
-    // Keep the browser from reloading the page; React handles the form instead.
     event.preventDefault();
     setErrorMessage("");
 
-    // Check the fields before sending them to the authentication service.
     if (!name.trim()) {
       setErrorMessage("Please enter your name.");
       return;
@@ -61,20 +60,18 @@ export default function SignUpPage() {
       return;
     }
 
-    // Disable the button while Better Auth is processing the request.
     setIsPending(true);
 
     try {
-      // Send the registration details. The profile image is optional.
       const result = await signUp.email({
         name: name.trim(),
         email: email.trim(),
         password,
         image: image.trim() || undefined,
+        role,
         callbackURL: "/",
       });
 
-      // Show the authentication service's error without leaving the form.
       if (result.error) {
         setErrorMessage(
           result.error.message ||
@@ -83,7 +80,6 @@ export default function SignUpPage() {
         return;
       }
 
-      // The account was created, so send the user to the home page.
       router.replace("/");
     } catch (error) {
       setErrorMessage(
@@ -94,7 +90,6 @@ export default function SignUpPage() {
     } finally {
       setIsPending(false);
     }
-
   }
 
   return (
@@ -211,6 +206,35 @@ export default function SignUpPage() {
                       className="h-12 rounded-xl border-white/[0.1] bg-[#111713]/70 pl-10 text-sm text-[#f0f2ec] placeholder:text-[#68756b] focus-visible:border-[#c8e889]/50 focus-visible:ring-[#c8e889]/20"
                     />
                   </div>
+                </Field>
+
+                <Field>
+                  <FieldLabel
+                    htmlFor="role"
+                    className="mb-2 text-xs font-semibold text-[#cbd4c8]"
+                  >
+                    Account role
+                  </FieldLabel>
+                  <select
+                    id="role"
+                    name="role"
+                    required
+                    value={role}
+                    onChange={(event) => {
+                      const selectedRole = accountRoles.find(
+                        (accountRole) => accountRole === event.target.value,
+                      );
+                      if (selectedRole) setRole(selectedRole);
+                    }}
+                    disabled={isPending}
+                    className="h-12 w-full rounded-xl border border-white/[0.1] bg-[#111713]/70 px-3.5 text-sm text-[#e2e8de] outline-none focus:border-[#c8e889]/50 disabled:opacity-60"
+                  >
+                    {accountRoles.map((accountRole) => (
+                      <option key={accountRole} value={accountRole}>
+                        {accountRole}
+                      </option>
+                    ))}
+                  </select>
                 </Field>
 
                 <Field>

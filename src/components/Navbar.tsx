@@ -1,9 +1,9 @@
 "use client";
 
+import { authClient } from "@/lib/auth-client";
 import {
   ArrowUpRight,
   ChevronDown,
-  LayoutDashboard,
   Menu,
   Search,
   UserRound,
@@ -12,6 +12,11 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/components/ui/avatar";
 
 const navigation = [
   { label: "Home", href: "/" },
@@ -20,12 +25,101 @@ const navigation = [
   { label: "For owners", href: "/list_equipement" },
 ];
 
+type AccountMenuProps = {
+  user: {
+    name: string;
+    email: string;
+    image?: string | null;
+  };
+  isSigningOut: boolean;
+  signOutError: string;
+  onSignOut: () => void;
+};
+
+function AccountMenu({
+  user,
+  isSigningOut,
+  signOutError,
+  onSignOut,
+}: AccountMenuProps) {
+  const firstInitial = user.name.trim().charAt(0).toUpperCase();
+
+  return (
+    <details className="group relative">
+      <summary
+        aria-label="Open account menu"
+        className="list-none cursor-pointer rounded-full outline-none focus-visible:ring-2 focus-visible:ring-[#c8e889]/60 [&::-webkit-details-marker]:hidden"
+      >
+        <Avatar size="lg" className="border border-white/10 bg-[#202b23]">
+          <AvatarImage src={user.image || undefined} alt={user.name} />
+          <AvatarFallback className="bg-[#202b23] text-sm font-bold text-[#c8e889]">
+            {firstInitial || <UserRound size={17} />}
+          </AvatarFallback>
+        </Avatar>
+      </summary>
+
+      <div className="absolute right-0 top-full z-[60] mt-3 w-64 rounded-2xl border border-white/10 bg-[#19211c] p-2 shadow-[0_18px_50px_rgba(0,0,0,0.4)]">
+        <div className="border-b border-white/[0.08] px-3 py-2.5">
+          <p className="truncate text-sm font-semibold text-[#f0f2ec]">
+            {user.name}
+          </p>
+          <p className="mt-1 truncate text-xs text-[#9eaa9f]">{user.email}</p>
+        </div>
+        <Link
+          href="/profile"
+          className="mt-1 flex h-10 items-center rounded-xl px-3 text-sm font-semibold text-[#dce4d9] transition-colors hover:bg-white/[0.06] hover:text-[#c8e889]"
+        >
+          Profile
+        </Link>
+        <button
+          type="button"
+          onClick={onSignOut}
+          disabled={isSigningOut}
+          className="flex h-10 w-full items-center rounded-xl px-3 text-left text-sm font-semibold text-[#dce4d9] transition-colors hover:bg-white/[0.06] hover:text-[#c8e889] disabled:cursor-wait disabled:opacity-60"
+        >
+          {isSigningOut ? "Signing out..." : "Sign out"}
+        </button>
+        {signOutError && (
+          <p role="alert" className="px-3 py-2 text-xs text-red-300">
+            {signOutError}
+          </p>
+        )}
+      </div>
+    </details>
+  );
+}
+
 export default function Navbar() {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
+  const [signOutError, setSignOutError] = useState("");
+  // The Better Auth session is the source of truth for navbar account links.
+  const { data: session, isPending: isSessionPending } =
+    authClient.useSession();
 
   const closeMenu = () => setMenuOpen(false);
+
+  async function handleSignOut() {
+    setSignOutError("");
+    setIsSigningOut(true);
+
+    try {
+      const result = await authClient.signOut();
+      if (result.error) {
+        setSignOutError(result.error.message || "Unable to sign out.");
+        return;
+      }
+
+      closeMenu();
+    } catch (error) {
+      setSignOutError(
+        error instanceof Error ? error.message : "Unable to sign out.",
+      );
+    } finally {
+      setIsSigningOut(false);
+    }
+  }
 
   return (
     <header className="sticky top-0 z-50 border-b border-white/[0.07] bg-[#141b17]/90 backdrop-blur-xl">
@@ -84,24 +178,15 @@ export default function Navbar() {
             <Search size={18} strokeWidth={2} />
           </Link>
 
-          {isLoggedIn ? (
-            <>
-              <Link
-                href="/dashboard"
-                className="mr-2 flex h-10 items-center gap-2 rounded-full px-3 text-[13px] font-bold text-[#e2e8de] transition-colors hover:text-[#c8e889]"
-              >
-                <LayoutDashboard size={16} />
-                Dashboard
-              </Link>
-              <button
-                type="button"
-                onClick={() => setIsLoggedIn(false)}
-                className="h-10 rounded-full border border-white/15 px-4 text-[13px] font-bold text-[#e2e8de] transition-colors hover:border-[#c8e889]/40 hover:text-[#c8e889]"
-              >
-                Logout
-              </button>
-            </>
-          ) : (
+          {session?.user && (
+            <AccountMenu
+              user={session.user}
+              isSigningOut={isSigningOut}
+              signOutError={signOutError}
+              onSignOut={handleSignOut}
+            />
+          )}
+          {!session?.user && !isSessionPending && (
             <>
               <Link
                 href="/login"
@@ -124,15 +209,25 @@ export default function Navbar() {
           )}
         </div>
 
-        <button
-          type="button"
-          onClick={() => setMenuOpen((open) => !open)}
-          className="ml-auto grid h-11 w-11 place-items-center rounded-full border border-white/10 text-[#e2e8de] transition-colors hover:border-[#c8e889]/40 hover:text-[#c8e889] lg:hidden"
-          aria-expanded={menuOpen}
-          aria-label={menuOpen ? "Close navigation" : "Open navigation"}
-        >
-          {menuOpen ? <X size={21} /> : <Menu size={21} />}
-        </button>
+        <div className="ml-auto flex items-center gap-3 lg:hidden">
+          {session?.user && (
+            <AccountMenu
+              user={session.user}
+              isSigningOut={isSigningOut}
+              signOutError={signOutError}
+              onSignOut={handleSignOut}
+            />
+          )}
+          <button
+            type="button"
+            onClick={() => setMenuOpen((open) => !open)}
+            className="grid h-11 w-11 place-items-center rounded-full border border-white/10 text-[#e2e8de] transition-colors hover:border-[#c8e889]/40 hover:text-[#c8e889]"
+            aria-expanded={menuOpen}
+            aria-label={menuOpen ? "Close navigation" : "Open navigation"}
+          >
+            {menuOpen ? <X size={21} /> : <Menu size={21} />}
+          </button>
+        </div>
       </nav>
 
       {menuOpen && (
@@ -153,47 +248,24 @@ export default function Navbar() {
                 <ChevronDown size={14} className="-rotate-90" />
               </Link>
             ))}
-            <div className="mt-5 grid grid-cols-2 gap-3">
-              {isLoggedIn ? (
-                <>
-                  <Link
-                    href="/dashboard"
-                    onClick={closeMenu}
-                    className="flex h-12 items-center justify-center gap-2 rounded-xl border border-white/10 text-sm font-bold text-[#e2e8de]"
-                  >
-                    <LayoutDashboard size={16} />
-                    Dashboard
-                  </Link>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsLoggedIn(false);
-                      closeMenu();
-                    }}
-                    className="h-12 rounded-xl bg-[#c8e889] text-sm font-bold text-[#1c281e]"
-                  >
-                    Logout
-                  </button>
-                </>
-              ) : (
-                <>
-                  <Link
-                    href="/login"
-                    onClick={closeMenu}
-                    className="flex h-12 items-center justify-center rounded-xl border border-white/10 text-sm font-bold text-[#e2e8de]"
-                  >
-                    Login
-                  </Link>
-                  <Link
-                    href="/sign-up"
-                    onClick={closeMenu}
-                    className="flex h-12 items-center justify-center rounded-xl bg-[#c8e889] text-sm font-black text-[#1c281e]"
-                  >
-                    Join MACHORA
-                  </Link>
-                </>
-              )}
-            </div>
+            {!session?.user && !isSessionPending && (
+              <div className="mt-5 grid grid-cols-2 gap-3">
+                <Link
+                  href="/login"
+                  onClick={closeMenu}
+                  className="flex h-12 items-center justify-center rounded-xl border border-white/10 text-sm font-bold text-[#e2e8de]"
+                >
+                  Login
+                </Link>
+                <Link
+                  href="/sign-up"
+                  onClick={closeMenu}
+                  className="flex h-12 items-center justify-center rounded-xl bg-[#c8e889] text-sm font-black text-[#1c281e]"
+                >
+                  Join MACHORA
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       )}

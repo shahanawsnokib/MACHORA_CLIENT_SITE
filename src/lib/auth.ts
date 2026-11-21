@@ -7,21 +7,30 @@ const db = client.db("machineRentbd");
 
 export const auth = betterAuth({
   baseURL: process.env.BETTER_AUTH_LOCAL_URL,
-      //...other options
   emailAndPassword: {
     enabled: true,
     minPasswordLength: 6,
   },
-  socialProviders: { 
-    github: { 
-      clientId: process.env.GITHUB_CLIENT_ID as string, 
-      clientSecret: process.env.GITHUB_CLIENT_SECRET as string, 
-    }, 
-       google: { 
-            clientId: process.env.GOOGLE_CLIENT_ID as string, 
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET as string, 
-        }, 
-  }, 
+  user: {
+    additionalFields: {
+      role: {
+        type: ["Admin", "Buyer", "Provider"],
+        required: true,
+        defaultValue: "Buyer",
+        input: true,
+      },
+    },
+  },
+  socialProviders: {
+    github: {
+      clientId: process.env.GITHUB_CLIENT_ID as string,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET as string,
+    },
+    google: {
+      clientId: process.env.GOOGLE_CLIENT_ID as string,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+    },
+  },
   database: mongodbAdapter(db, {
     client,
   }),
