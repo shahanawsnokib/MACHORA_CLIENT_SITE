@@ -1,6 +1,7 @@
 "use client";
 
 import { showToast } from "@/lib/toast";
+import { isDashboardPath } from "@/lib/dashboard-routes";
 
 import { useState, type FormEvent } from "react";
 import {
@@ -47,9 +48,10 @@ export default function LoginPage() {
   function signedInPath() {
     const next = new URLSearchParams(window.location.search).get("next");
     if (next === "/dashboard/owner#equipment-form") {
-      return "/dashboard/owner?auth=signed-in#equipment-form";
+      return "/dashboard/owner/add-equipment?auth=signed-in";
     }
-    const path = next && /^\/(?:dashboard(?:\/(?:admin|owner|customer))?|profile|browse_equipment\/[a-f0-9]{24}(?:\?book=1)?)$/i.test(next) ? next : "/";
+    const allowed = next && (next === "/dashboard" || next === "/profile" || isDashboardPath(next) || /^\/browse_equipment\/[a-f0-9]{24}(?:\?book=1)?$/i.test(next));
+    const path = allowed ? next : "/";
     const destination = new URL(path, window.location.origin);
     destination.searchParams.set("auth", "signed-in");
     return destination.pathname + destination.search;
@@ -176,7 +178,7 @@ export default function LoginPage() {
                 Welcome back. Enter your details to continue.
               </p>
               <Link
-                href="/login?next=%2Fdashboard%2Fowner%23equipment-form#email"
+                href="/login?next=%2Fdashboard%2Fowner%2Fadd-equipment#email"
                 className="mt-4 inline-flex rounded-lg border border-[#c8e889]/30 px-3 py-2 text-sm font-semibold text-[#c8e889] hover:bg-[#c8e889]/10"
               >
                 Owner sign-in

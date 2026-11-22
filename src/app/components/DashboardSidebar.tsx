@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { dashboardPages, dashboardPath, type DashboardSection } from "@/lib/dashboard-routes";
 import {
   Boxes,
   CalendarDays,
@@ -25,25 +27,12 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 
-const roleBaseDashboardMenuItems = {
-  Customer: [
-    { name: "Dashboard", url: "/dashboard/customer", icon: LayoutDashboard },
-    { name: "Browse equipment", url: "/browse_equipment", icon: Search },
-    { name: "My profile", url: "/profile", icon: UserRound },
-  ],
-  Owner: [
-    { name: "Dashboard", url: "/dashboard/owner", icon: LayoutDashboard },
-    { name: "My equipment", url: "/dashboard/owner#listings", icon: Boxes },
-    { name: "Add equipment", url: "/dashboard/owner#equipment-form", icon: Wrench },
-    { name: "My profile", url: "/profile", icon: UserRound },
-  ],
-  Admin: [
-    { name: "Dashboard", url: "/dashboard/admin", icon: LayoutDashboard },
-    { name: "All users", url: "/dashboard/admin#users", icon: Users },
-    { name: "All equipment", url: "/dashboard/admin#listings", icon: Boxes },
-    { name: "All rentals", url: "/dashboard/admin#rentals", icon: CalendarDays },
-    { name: "My profile", url: "/profile", icon: UserRound },
-  ],
+const sectionIcons: Record<DashboardSection, typeof Boxes> = {
+  rentals: CalendarDays,
+  listings: Boxes,
+  "equipment-form": Wrench,
+  users: Users,
+  profile: UserRound,
 };
 
 export function DashboardSidebar() {
@@ -53,7 +42,12 @@ export function DashboardSidebar() {
   // Customer is the default when the session has no recognized role.
   const role =
     userRole === "Owner" || userRole === "Admin" ? userRole : "Customer";
-  const menuItems = roleBaseDashboardMenuItems[role];
+  const pathname = usePathname();
+  const menuItems = [
+    { name: "Dashboard", url: dashboardPath(role), icon: LayoutDashboard },
+    ...dashboardPages[role].map(({ slug, label, section }) => ({ name: label, url: dashboardPath(role, slug), icon: sectionIcons[section] })),
+  ];
+  if (role === "Customer") menuItems.push({ name: "Browse equipment", url: "/browse_equipment", icon: Search });
   const userName = session?.user?.name || "MACHORA member";
 
   return (
@@ -86,6 +80,7 @@ export function DashboardSidebar() {
                   <SidebarMenuItem key={item.url}>
                     <SidebarMenuButton
                       render={<Link href={item.url} />}
+                      isActive={pathname === item.url}
                       size="lg"
                       className="px-3"
                     >

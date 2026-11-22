@@ -5,6 +5,7 @@ import { showToast } from "@/lib/toast";
 import Link from "next/link";
 import { Boxes, CalendarDays, CircleCheck, Plus, ShieldCheck, UserRound, Users, Wallet } from "lucide-react";
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { dashboardPages, dashboardPath, type DashboardRole, type DashboardSection } from "@/lib/dashboard-routes";
 import { equipmentCategories } from "@/lib/marketplace-data";
 import { rentalApi, type Equipment } from "@/lib/rental-api";
 
@@ -14,11 +15,10 @@ type Booking = {
   status: string; paymentStatus: string; paymentMethod?: string; phone?: string; address?: string; notes?: string;
 };
 type User = { _id: string; name: string; email: string; role?: string; createdAt: string; image?: string | null; phone?: string; address?: string };
-type Role = "Customer" | "Owner" | "Admin";
 
 const fields = ["name", "description", "location", "condition", "brand", "model", "terms"] as const;
 
-export default function RentalDashboard({ role }: { role: Role }) {
+export default function RentalDashboard({ role, section }: { role: DashboardRole; section?: Exclude<DashboardSection, "profile"> }) {
   const [items, setItems] = useState<Equipment[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [users, setUsers] = useState<User[]>([]);
@@ -29,15 +29,18 @@ export default function RentalDashboard({ role }: { role: Role }) {
   const [editing, setEditing] = useState<Equipment>();
   const [message, setMessage] = useState("Loading dashboard…");
   const [version, setVersion] = useState(0);
+  const routes = dashboardPages[role];
+  const currentPage = routes.find((page) => page.section === section);
+  const overview = section === undefined;
   const scope = role.toLowerCase();
   const equipmentPath = role === "Customer" ? "/favorites" : "/" + scope + "/equipment";
 
   useEffect(() => {
     let current = true;
     Promise.all([
-      rentalApi<Equipment[]>(equipmentPath, {}, true),
-      rentalApi<Booking[]>("/bookings", {}, true),
-      role === "Admin" ? rentalApi<User[]>("/admin/users", {}, true) : Promise.resolve([]),
+      overview || section === "listings" ? rentalApi<Equipment[]>(equipmentPath, {}, true) : Promise.resolve([]),
+      overview || section === "rentals" ? rentalApi<Booking[]>("/bookings", {}, true) : Promise.resolve([]),
+      role === "Admin" && (overview || section === "users") ? rentalApi<User[]>("/admin/users", {}, true) : Promise.resolve([]),
     ]).then(([equipment, rentals, accounts]) => {
       if (!current) return;
       setItems(equipment);
@@ -46,7 +49,11 @@ export default function RentalDashboard({ role }: { role: Role }) {
       setMessage((previous) => previous === "Loading dashboard…" ? "" : previous);
     }).catch((error) => { if (current) setMessage(error.message); });
     return () => { current = false; };
-  }, [equipmentPath, role, version]);
+  }, [equipmentPath, overview, role, section, version]);
+
+  useEffect(() => {
+    if (editing) document.getElementById("equipment-form")?.scrollIntoView();
+  }, [editing]);
 
   async function save(path: string, method: string, body?: object, success = "Changes saved.") {
     try {
@@ -125,7 +132,7 @@ export default function RentalDashboard({ role }: { role: Role }) {
   const monthlyMaximum = Math.max(1, ...monthly.values());
 
   return <div className={hasOverview ? "rental-form mx-auto w-full max-w-[1480px] space-y-6 p-4 sm:p-6 lg:px-8" : "rental-form w-full space-y-8 p-5 lg:p-8"}>
-    {role !== "Customer" ? (
+    {!overview ? <h1 className="text-3xl font-semibold">{currentPage?.label}</h1> : role !== "Customer" ? (
       <header className="flex flex-wrap items-end justify-between gap-5 rounded-2xl border border-[#c8e889]/15 bg-[#213126] p-5 sm:p-8">
         <div>
           <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">{role} dashboard</h1>
@@ -134,24 +141,26 @@ export default function RentalDashboard({ role }: { role: Role }) {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Link href="/profile" className="inline-flex items-center gap-2 rounded-lg border border-white/15 px-3 py-2 text-sm font-medium !no-underline hover:bg-white/5">
+          <Link href={dashboardPath(role, "profile")} className="inline-flex items-center gap-2 rounded-lg border border-white/15 px-3 py-2 text-sm font-medium !no-underline hover:bg-white/5">
             <UserRound size={16} aria-hidden="true" /> Edit profile
           </Link>
-          <a href={role === "Admin" ? "#listings" : "#equipment-form"} className="inline-flex items-center gap-2 rounded-lg bg-[#c8e889] px-3 py-2 text-sm font-semibold text-[#19211c] !no-underline hover:bg-[#d7eeac]">
+          <Link href={role === "Admin" ? "/dashboard/admin/all-equipment" : "/dashboard/owner/add-equipment"} className="inline-flex items-center gap-2 rounded-lg bg-[#c8e889] px-3 py-2 text-sm font-semibold text-[#19211c] !no-underline hover:bg-[#d7eeac]">
             {role === "Admin" ? <ShieldCheck size={17} aria-hidden="true" /> : <Plus size={17} aria-hidden="true" />}
             {role === "Admin" ? "Review equipment" : "Add equipment"}
-          </a>
+          </Link>
         </div>
       </header>
     ) : <h1 className="text-3xl font-bold">Customer dashboard</h1>}
     <nav aria-label="Dashboard sections" className={hasOverview ? "flex flex-wrap gap-x-5 gap-y-2 border-b border-white/10 px-1 pb-3 text-sm text-[#d1dfce]" : "flex flex-wrap gap-4"}>
-      <a href="#rentals">Rentals</a><a href="#listings">{role === "Admin" ? "All equipment" : role === "Customer" ? "Favorites" : "Equipment"}</a>
-      {role === "Owner" && <a href="#equipment-form">Add equipment</a>}
-      {role === "Admin" && <a href="#users">Users</a>}
-      <Link href="/profile">Profile</Link>
+      <Link href={dashboardPath(role)}>Overview</Link>
+      {routes.map(({ slug, label, section: pageSection }) => (
+        <Link key={slug} href={dashboardPath(role, slug)} aria-current={section === pageSection ? "page" : undefined}>
+          {label}
+        </Link>
+      ))}
     </nav>
     {message && message !== "User profile saved." && <p role="status">{message}</p>}
-    {role !== "Customer" && <section className="space-y-3">
+    {overview && role !== "Customer" && <section className="space-y-3">
       <h2 className="text-xl font-bold">Overview</h2>
       <dl className={"grid grid-cols-2 gap-3 " + (role === "Admin" ? "lg:grid-cols-3 2xl:grid-cols-6" : "xl:grid-cols-4")}>
         {metrics.map(({ label, value, icon: Icon }) => (
@@ -171,7 +180,7 @@ export default function RentalDashboard({ role }: { role: Role }) {
         </div>)}
       </div>}
     </section>}
-    <section id="rentals" className={panel + " scroll-mt-5 space-y-3"}>
+    {(section === "rentals" || (overview && role === "Customer")) && <section id="rentals" className={panel + " scroll-mt-5 space-y-3"}>
       <h2 className="text-xl font-bold">{role === "Admin" ? "All rentals" : role === "Customer" ? "My rentals" : "Equipment rentals"}</h2>
       {bookings.length ? <div className="overflow-x-auto"><table className={hasOverview ? "min-w-[640px] text-sm" : ""}>
         <thead><tr><th>Equipment</th>{role !== "Customer" && <th>Customer</th>}{role === "Admin" && <th>Owner</th>}<th>Dates</th><th>Booked</th><th>Qty</th><th>Total</th><th>Payment</th><th>Status</th>{role === "Admin" && <th>Actions</th>}</tr></thead>
@@ -184,8 +193,8 @@ export default function RentalDashboard({ role }: { role: Role }) {
           </div></td>}
         </tr>)}</tbody>
       </table></div> : <p className={hasOverview ? "rounded-xl border border-dashed border-white/15 p-5 text-sm text-[#b4c0b4]" : ""}>No rentals yet.</p>}
-    </section>
-    <section id="listings" className={panel + " scroll-mt-5 space-y-3"}>
+    </section>}
+    {section === "listings" && <section id="listings" className={panel + " scroll-mt-5 space-y-3"}>
       <h2 className="text-xl font-bold">{role === "Customer" ? "Favorites" : "Equipment"}</h2>
       {items.length ? <div className="overflow-x-auto"><table className={hasOverview ? "min-w-[550px] text-sm" : ""}>
         <thead><tr><th>Name</th><th>Category</th><th>Price</th><th>Quantity</th><th>Status</th><th>Actions</th></tr></thead>
@@ -193,7 +202,7 @@ export default function RentalDashboard({ role }: { role: Role }) {
           <td>{row.name}</td><td>{row.category}</td><td>৳{row.price}</td><td>{row.quantity}</td><td><span className={hasOverview ? "rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs" : ""}>{row.status}</span></td>
           <td><div className="flex flex-wrap items-center gap-2">
             <Link href={"/browse_equipment/" + row._id}>Details</Link>
-            {role !== "Customer" && <a href="#equipment-form" onClick={() => setEditing(row)}>Edit</a>}
+            {role !== "Customer" && <button type="button" onClick={() => setEditing(row)}>Edit</button>}
             <button onClick={() => {
               if (role === "Customer" || window.confirm("Delete this listing?")) void save(equipmentPath + "/" + row._id, "DELETE", undefined, role === "Customer" ? "Removed from favorites." : "Equipment deleted.");
             }}>{role === "Customer" ? "Remove" : "Delete"}</button>
@@ -204,10 +213,10 @@ export default function RentalDashboard({ role }: { role: Role }) {
         </tr>)}</tbody>
       </table></div> : <div className={hasOverview ? "space-y-2 rounded-xl border border-dashed border-white/15 p-5 text-sm text-[#b4c0b4]" : ""}>
         <p>No equipment yet.</p>
-        {role === "Owner" && <a href="#equipment-form" className="inline-block text-[#c8e889]">Add your first machine</a>}
+        {role === "Owner" && <Link href="/dashboard/owner/add-equipment" className="inline-block text-[#c8e889]">Add your first machine</Link>}
       </div>}
-    </section>
-    {(role === "Owner" || editing) && <section id="equipment-form" className={panel + " scroll-mt-5 space-y-4"}>
+    </section>}
+    {(section === "equipment-form" || editing) && <section id="equipment-form" className={panel + " scroll-mt-5 space-y-4"}>
       <h2 className="text-xl font-bold">{editing ? "Edit equipment" : "Add equipment"}</h2>
       <form key={editing?._id || "new"} className="grid gap-4 text-sm sm:grid-cols-2" onSubmit={async (event) => {
         event.preventDefault();
@@ -244,7 +253,7 @@ export default function RentalDashboard({ role }: { role: Role }) {
         <div className="flex gap-3"><button>Save listing</button>{editing && <button type="button" onClick={() => setEditing(undefined)}>Cancel edit</button>}</div>
       </form>
     </section>}
-    {role === "Admin" && <section id="users" className={panel + " scroll-mt-5 space-y-3"}>
+    {role === "Admin" && section === "users" && <section id="users" className={panel + " scroll-mt-5 space-y-3"}>
       <h2 className="text-xl font-bold">All users</h2>
       {message === "User profile saved." && <p role="status" className="text-sm text-[#c8e889]">{message}</p>}
       <div className="overflow-x-auto"><table className="min-w-[520px] text-sm [&_tbody_tr:hover]:bg-white/5 [&_thead]:text-[#bac8b9]"><thead><tr><th>Name</th><th>Email</th><th>Registered</th><th>Role</th><th>Actions</th></tr></thead>

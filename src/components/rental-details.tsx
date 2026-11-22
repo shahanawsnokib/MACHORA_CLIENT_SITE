@@ -86,7 +86,7 @@ export default function RentalDetails({ id, canBook, openBooking, phone, address
           {booked ? (
             <div className="mt-6 space-y-3">
               <p role="status" className="font-medium text-[#c8e889]">Booking confirmed. Pay when the equipment is delivered.</p>
-              <Link href="/dashboard/customer#rentals">View my rentals</Link>
+              <Link href="/dashboard/customer/my-rentals">View my rentals</Link>
             </div>
           ) : (
             <form onSubmit={submitBooking} className="mt-6 space-y-5">

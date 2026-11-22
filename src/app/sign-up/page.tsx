@@ -85,7 +85,7 @@ export default function SignUpPage() {
       }
 
       router.replace(role === "Owner"
-        ? "/dashboard/owner?auth=registered#equipment-form"
+        ? "/dashboard/owner/add-equipment?auth=registered"
         : "/?auth=registered");
     } catch (error) {
       reportError(
@@ -163,7 +163,7 @@ export default function SignUpPage() {
                   Admin sign-in
                 </Link>
                 <Link
-                  href="/login?next=%2Fdashboard%2Fowner%23equipment-form#email"
+                  href="/login?next=%2Fdashboard%2Fowner%2Fadd-equipment#email"
                   className="inline-flex items-center gap-2 rounded-lg border border-[#c8e889]/30 px-3 py-2 text-sm font-semibold text-[#c8e889] hover:bg-[#c8e889]/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#c8e889]"
                 >
                   <UserRound aria-hidden="true" size={16} />
