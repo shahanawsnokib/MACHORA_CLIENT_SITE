@@ -50,7 +50,7 @@ export default function LoginPage() {
     if (next === "/dashboard/owner#equipment-form") {
       return "/dashboard/owner/add-equipment?auth=signed-in";
     }
-    const allowed = next && (next === "/dashboard" || next === "/profile" || isDashboardPath(next) || /^\/browse_equipment\/[a-f0-9]{24}(?:\?book=1)?$/i.test(next));
+    const allowed = next && (next === "/dashboard" || next === "/profile" || isDashboardPath(next) || /^\/payment\/(?:success|cancel)\?booking=[a-f0-9]{24}$/.test(next) || /^\/browse_equipment\/[a-f0-9]{24}(?:\?book=1)?$/i.test(next));
     const path = allowed ? next : "/";
     const destination = new URL(path, window.location.origin);
     destination.searchParams.set("auth", "signed-in");

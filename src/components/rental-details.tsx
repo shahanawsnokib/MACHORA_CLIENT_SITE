@@ -14,7 +14,6 @@ export default function RentalDetails({ id, canBook, openBooking, phone, address
   const [bookingError, setBookingError] = useState("");
   const [booked, setBooked] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [onlineNotice, setOnlineNotice] = useState(false);
 
   useEffect(() => {
     let current = true;
@@ -30,14 +29,20 @@ export default function RentalDetails({ id, canBook, openBooking, phone, address
   async function submitBooking(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const fields = Object.fromEntries(new FormData(event.currentTarget));
+    const submitter = (event.nativeEvent as SubmitEvent).submitter;
+    const paymentMethod = submitter instanceof HTMLButtonElement && submitter.value === "Stripe" ? "Stripe" : "Cash on delivery";
     setBusy(true);
     setBookingError("");
-    setOnlineNotice(false);
     try {
-      await rentalApi("/bookings", {
+      const booking = await rentalApi<{ checkoutUrl?: string }>("/bookings", {
         method: "POST",
-        body: JSON.stringify({ ...fields, equipmentId: id, paymentMethod: "Cash on delivery" }),
+        body: JSON.stringify({ ...fields, equipmentId: id, paymentMethod }),
       }, true);
+      if (paymentMethod === "Stripe") {
+        if (!booking.checkoutUrl) throw new Error("Could not open Stripe Checkout.");
+        window.location.assign(booking.checkoutUrl);
+        return;
+      }
       setBooked(true);
       showToast("Booking confirmed. Pay on delivery.");
     } catch (error) {
@@ -99,13 +104,9 @@ export default function RentalDetails({ id, canBook, openBooking, phone, address
                 <label className="sm:col-span-2">Notes <span className="text-[#bac8b9]">(optional)</span><textarea rows={2} name="notes" /></label>
               </fieldset>
               {bookingError && <p role="alert" className="text-sm text-red-300">{bookingError}</p>}
-              {onlineNotice && <p role="status" className="text-sm text-[#bac8b9]">Online payment is not available yet. You can choose cash on delivery.</p>}
               <div className="grid gap-3 border-t border-white/10 pt-5 sm:grid-cols-2">
-                <button type="submit" disabled={busy}>{busy ? "Booking…" : "Cash on delivery"}</button>
-                <button type="button" disabled={busy} className="border border-white/15 !bg-transparent !text-[#c8e889]" onClick={() => {
-                  setOnlineNotice(true);
-                  showToast("Online payment is not available yet.", "info");
-                }}>
+                <button type="submit" value="Cash on delivery" disabled={busy}>{busy ? "Booking…" : "Cash on delivery"}</button>
+                <button type="submit" value="Stripe" disabled={busy} className="border border-white/15 !bg-transparent !text-[#c8e889]">
                   Pay online
                 </button>
               </div>

@@ -19,7 +19,7 @@ Use `http://localhost:3000/api/auth/callback/google` as an authorized Google OAu
 
 ## Bookings and payment
 
-A customer selects rental dates and quantity. The API checks stock for every selected date, calculates the price, and confirms the booking as **Unpaid**. The administrator can record a payment collected manually by selecting **Mark paid**. There is no checkout redirect.
+A customer selects rental dates and quantity. **Cash on delivery** confirms the rental as unpaid until an administrator marks it paid. **Pay online** reserves the equipment and opens Stripe Checkout. The success page checks for payment confirmation from the server.
 
 ## Main packages
 
@@ -29,4 +29,4 @@ A customer selects rental dates and quantity. The API checks stock for every sel
 - Better Auth with its MongoDB adapter for email/password, Google login, and JWT issuance.
 - MongoDB driver for persistence.
 
-Run `npm run lint` and `npm run build` before deploying. In production, use HTTPS, set the web and API origins in both apps, and add the production Google callback URI. See the server README for backend configuration and the future payment integration point.
+Run `npm run lint` and `npm run build` before deploying. In production, use HTTPS, set the web and API origins in both apps, and add the production Google callback URI. See the server README for backend configuration and Stripe setup.
