@@ -102,16 +102,23 @@ export default function RentalDetails({ id, canBook, openBooking }: { id: string
           <p className="mt-4 flex items-center gap-2 border-t border-white/10 pt-4 text-sm text-[#c8d3c7]">
             <Package size={17} aria-hidden="true" /> {quantity > 0 ? `${quantity} available` : "Out of stock"}
           </p>
-          {canBook ? (
-            <div className="mt-5 grid gap-3">
-              <button className="inline-flex items-center justify-center gap-2" disabled={quantity < 1} onClick={() => { setBookingError(""); dialog.current?.showModal(); }}>
+          <div className="mt-5 grid gap-3">
+            {canBook || quantity < 1 ? (
+              <button type="button" className="inline-flex items-center justify-center gap-2" disabled={quantity < 1} onClick={() => { setBookingError(""); dialog.current?.showModal(); }}>
                 <CalendarDays size={17} aria-hidden="true" /> Book now
               </button>
-              <button className="inline-flex items-center justify-center gap-2 border border-white/15 !bg-transparent !text-[#c8e889]" onClick={saveFavorite}>
+            ) : (
+              <Link href={"/login?next=" + encodeURIComponent("/browse_equipment/" + id + "?book=1")} className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#c8e889] px-3 py-2 font-semibold text-[#19211c] !no-underline hover:bg-[#d7eeac]">
+                <CalendarDays size={17} aria-hidden="true" /> Book now
+              </Link>
+            )}
+            {canBook && (
+              <button type="button" className="inline-flex items-center justify-center gap-2 border border-white/15 !bg-transparent !text-[#c8e889]" onClick={saveFavorite}>
                 <Heart size={17} aria-hidden="true" /> Save to favorites
               </button>
-            </div>
-          ) : openBooking && <p className="mt-4 text-sm">Sign in with a Customer account to book equipment.</p>}
+            )}
+          </div>
+          {!canBook && quantity > 0 && <p className="mt-3 text-sm text-[#bac8b9]">Use a Customer account to book this equipment.</p>}
           {notice && <p role="status" className="mt-4 text-sm text-[#e2f3ca]">{notice}</p>}
           {booked && <Link className="mt-2 inline-block text-sm text-[#c8e889]" href="/dashboard/customer#rentals">View my rentals</Link>}
         </aside>
