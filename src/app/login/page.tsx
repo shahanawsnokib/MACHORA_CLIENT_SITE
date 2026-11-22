@@ -42,8 +42,10 @@ export default function LoginPage() {
     if (next === "/dashboard/owner#equipment-form") {
       return "/dashboard/owner?auth=signed-in#equipment-form";
     }
-    const path = next && /^\/(?:dashboard(?:\/(?:admin|owner|customer))?|profile|browse_equipment\/[a-f0-9]{24})$/i.test(next) ? next : "/";
-    return path + "?auth=signed-in";
+    const path = next && /^\/(?:dashboard(?:\/(?:admin|owner|customer))?|profile|browse_equipment\/[a-f0-9]{24}(?:\?book=1)?)$/i.test(next) ? next : "/";
+    const destination = new URL(path, window.location.origin);
+    destination.searchParams.set("auth", "signed-in");
+    return destination.pathname + destination.search;
   }
 
   // Submit email and password to Better Auth.

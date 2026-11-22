@@ -6,7 +6,9 @@ export function proxy(request: NextRequest) {
   if (getSessionCookie(request)) return NextResponse.next();
 
   const login = new URL("/login", request.url);
-  login.searchParams.set("next", request.nextUrl.pathname);
+  const path = request.nextUrl.pathname;
+  const booking = path.startsWith("/browse_equipment/") && request.nextUrl.searchParams.get("book") === "1";
+  login.searchParams.set("next", path + (booking ? "?book=1" : ""));
   return NextResponse.redirect(login);
 }
 

@@ -1,8 +1,13 @@
 import { requireUser } from "@/lib/session";
 import RentalDetails from "@/components/rental-details";
 
-export default async function Page({ params }: { params: Promise<{ id: string }> }) {
+export default async function Page({ params, searchParams }: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ book?: string | string[] }>;
+}) {
   const { id } = await params;
-  const user = await requireUser(undefined, "/browse_equipment/" + id);
-  return <RentalDetails id={id} canBook={!user.role || user.role === "Customer"} />;
+  const openBooking = (await searchParams).book === "1";
+  const path = "/browse_equipment/" + id + (openBooking ? "?book=1" : "");
+  const user = await requireUser(undefined, path);
+  return <RentalDetails key={id} id={id} openBooking={openBooking} canBook={!user.role || user.role === "Customer"} />;
 }

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { rentalApi, type Equipment } from "@/lib/rental-api";
 
-export default function RentalDetails({ id, canBook }: { id: string; canBook: boolean }) {
+export default function RentalDetails({ id, canBook, openBooking }: { id: string; canBook: boolean; openBooking: boolean }) {
   const [item, setItem] = useState<Equipment>();
   const [message, setMessage] = useState("Loading equipment…");
   const [busy, setBusy] = useState(false);
@@ -15,6 +15,12 @@ export default function RentalDetails({ id, canBook }: { id: string; canBook: bo
       .then((row) => { setItem(row); setMessage(""); })
       .catch((error) => setMessage(error.message));
   }, [id]);
+
+  const quantity = item?.quantity ?? 0;
+  useEffect(() => {
+    const form = dialog.current;
+    if (openBooking && canBook && quantity > 0 && form && !form.open) form.showModal();
+  }, [openBooking, canBook, quantity, id]);
 
   if (!item) return <p className="p-10" role="status">{message}</p>;
 
@@ -30,6 +36,7 @@ export default function RentalDetails({ id, canBook }: { id: string; canBook: bo
       <button onClick={() => rentalApi("/favorites/" + id, { method: "PUT" }, true).then(() => setMessage("Saved to favorites.")).catch((error) => setMessage(error.message))}>Add to favorites</button>
       <button disabled={!item.quantity} onClick={() => { setMessage(""); dialog.current?.showModal(); }}>Book now</button>
     </div>}
+    {openBooking && !canBook && <p>Sign in with a Customer account to book equipment.</p>}
     {message && <p role="status">{message} <Link className="underline" href="/dashboard/customer">My rentals</Link></p>}
     <dialog ref={dialog} className="m-auto max-h-[90vh] w-[min(95vw,32rem)] rounded-xl bg-[#19211c] p-6 text-white backdrop:bg-black/70">
       <form className="grid gap-3" onSubmit={async (event) => {

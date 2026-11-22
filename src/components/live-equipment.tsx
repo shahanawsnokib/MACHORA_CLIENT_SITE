@@ -47,7 +47,12 @@ export default function LiveEquipment({ featured = false }: { featured?: boolean
             <h3 className="text-lg font-bold">{item.name}</h3>
             <p>{item.category} · {item.location}</p>
             <p>৳{item.price} · {item.rentalType} · {item.quantity ? "Available" : "Unavailable"}</p>
-            <Link className="underline" href={"/browse_equipment/" + item._id}>View details</Link>
+            <div className="flex flex-wrap items-center gap-3 pt-2">
+              <Link href={"/browse_equipment/" + item._id}>View details</Link>
+              {item.quantity > 0 ? (
+                <Link className="rounded-lg bg-[#c8e889] px-3 py-2 text-sm font-semibold text-[#19211c] !no-underline hover:bg-[#d7eeac]" href={"/browse_equipment/" + item._id + "?book=1"}>Book now</Link>
+              ) : <button type="button" disabled>Book now</button>}
+            </div>
           </div>
         </article>)}
       </div>
