@@ -112,3 +112,12 @@
     color: oklch(0.2 0.03 155);
   }
 }
+
+/* Shared form and table styles for the rental workflow. */
+.rental-form :is(input, select, textarea) { background: #121a15; color: #eff4ed; border: 1px solid #6e7f71; border-radius: .5rem; padding: .55rem .65rem; max-width: 100%; }
+.rental-form label :is(input, select, textarea) { display: block; width: 100%; margin-top: .35rem; }
+.rental-form button { border-radius: .5rem; padding: .55rem .8rem; background: #c8e889; color: #19211c; font-weight: 650; }
+.rental-form button:disabled { opacity: .55; }
+.rental-form table { width: 100%; text-align: left; }
+.rental-form :is(th, td) { padding: .6rem; border-bottom: 1px solid #435246; }
+.rental-form a { text-decoration: underline; }

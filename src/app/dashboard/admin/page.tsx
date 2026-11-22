@@ -1,11 +1,5 @@
-import React from 'react';
+import RentalDashboard from "@/components/rental-dashboard";
 
-const adminDashboardpage = () => {
-    return (
-        <div>
-            adminDeshboardpage
-        </div>
-    );
-};
-
-export default adminDashboardpage;
+export default function Page() {
+  return <RentalDashboard role="Admin" />;
+}

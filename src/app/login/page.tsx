@@ -37,6 +37,15 @@ export default function LoginPage() {
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
   const [errorMessage, setErrorMessage] = useState("");
 
+  function signedInPath() {
+    const next = new URLSearchParams(window.location.search).get("next");
+    if (next === "/dashboard/owner#equipment-form") {
+      return "/dashboard/owner?auth=signed-in#equipment-form";
+    }
+    const path = next && /^\/(?:dashboard(?:\/(?:admin|owner|customer))?|profile|browse_equipment\/[a-f0-9]{24})$/i.test(next) ? next : "/";
+    return path + "?auth=signed-in";
+  }
+
   // Submit email and password to Better Auth.
   async function handleEmailSignIn(event: FormEvent<HTMLFormElement>) {
     // Prevent a full browser reload so we can handle the result here.
@@ -49,7 +58,7 @@ export default function LoginPage() {
       const result = await signIn.email({
         email,
         password,
-        callbackURL: "/",
+        callbackURL: signedInPath(),
       });
 
       // Keep the user on this page and show a useful message if sign-in fails.
@@ -59,7 +68,7 @@ export default function LoginPage() {
       }
 
       // Replace the login page with the home page after successful sign-in.
-      router.replace("/");
+      router.replace(signedInPath());
       router.refresh();
     } catch (error) {
       setErrorMessage(
@@ -80,7 +89,7 @@ export default function LoginPage() {
     try {
       const result = await signIn.social({
         provider,
-        callbackURL: "/",
+        callbackURL: signedInPath(),
       });
 
       if (result.error) {
@@ -157,6 +166,12 @@ export default function LoginPage() {
               <p className="mt-2 text-sm leading-6 text-[#9eaa9f]">
                 Welcome back. Enter your details to continue.
               </p>
+              <Link
+                href="/login?next=%2Fdashboard%2Fowner%23equipment-form#email"
+                className="mt-4 inline-flex rounded-lg border border-[#c8e889]/30 px-3 py-2 text-sm font-semibold text-[#c8e889] hover:bg-[#c8e889]/10"
+              >
+                Owner sign-in
+              </Link>
             </div>
 
             <div className="grid grid-cols-2 gap-3">

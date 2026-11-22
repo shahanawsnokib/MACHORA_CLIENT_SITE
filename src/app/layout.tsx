@@ -1,3 +1,5 @@
+import { Suspense } from "react";
+import AuthNotice from "@/components/auth-notice";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
@@ -27,6 +29,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col">
         <Navbar />
+        <Suspense><AuthNotice /></Suspense>
         {children}
         <Footer />
       </body>

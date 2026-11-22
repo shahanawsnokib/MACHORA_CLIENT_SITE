@@ -19,8 +19,6 @@ import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { signUp } from "@/lib/auth-client";
 
-const accountRoles = ["Customer", "Owner", "Admin"] as const;
-type AccountRole = (typeof accountRoles)[number];
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -30,7 +28,6 @@ export default function SignUpPage() {
   const [image, setImage] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [role, setRole] = useState<AccountRole>("Customer");
   const [showPassword, setShowPassword] = useState(false);
   const [isPending, setIsPending] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -59,6 +56,7 @@ export default function SignUpPage() {
       return;
     }
 
+    const role = new FormData(event.currentTarget).get("accountType") === "Owner" ? "Owner" : "Customer";
     setIsPending(true);
 
     try {
@@ -66,8 +64,8 @@ export default function SignUpPage() {
         name: name.trim(),
         email: email.trim(),
         password,
-        image: image.trim() || undefined,
         role,
+        image: image.trim() || undefined,
         callbackURL: "/",
       });
 
@@ -79,7 +77,9 @@ export default function SignUpPage() {
         return;
       }
 
-      router.replace("/");
+      router.replace(role === "Owner"
+        ? "/dashboard/owner?auth=registered#equipment-form"
+        : "/?auth=registered");
     } catch (error) {
       setErrorMessage(
         error instanceof Error
@@ -147,10 +147,41 @@ export default function SignUpPage() {
               <p className="mt-2 text-sm leading-6 text-[#9eaa9f]">
                 Join renters and equipment owners across Bangladesh.
               </p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Link
+                  href="/login?next=%2Fdashboard%2Fadmin"
+                  className="inline-flex items-center gap-2 rounded-lg border border-[#c8e889]/30 px-3 py-2 text-sm font-semibold text-[#c8e889] hover:bg-[#c8e889]/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#c8e889]"
+                >
+                  <ShieldCheck aria-hidden="true" size={16} />
+                  Admin sign-in
+                </Link>
+                <Link
+                  href="/login?next=%2Fdashboard%2Fowner%23equipment-form#email"
+                  className="inline-flex items-center gap-2 rounded-lg border border-[#c8e889]/30 px-3 py-2 text-sm font-semibold text-[#c8e889] hover:bg-[#c8e889]/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#c8e889]"
+                >
+                  <UserRound aria-hidden="true" size={16} />
+                  Owner sign-in
+                </Link>
+              </div>
             </div>
 
             <form onSubmit={handleSignUp} autoComplete="on">
               <FieldGroup className="gap-4">
+                <Field>
+                  <FieldLabel htmlFor="account-type" className="mb-2 text-xs font-semibold text-[#cbd4c8]">
+                    Account type
+                  </FieldLabel>
+                  <select
+                    id="account-type"
+                    name="accountType"
+                    defaultValue="Customer"
+                    disabled={isPending}
+                    className="h-12 w-full rounded-xl border border-white/10 bg-[#111713] px-3 text-sm text-[#f0f2ec]"
+                  >
+                    <option value="Customer">Customer · Rent equipment</option>
+                    <option value="Owner">Owner · List equipment for rent</option>
+                  </select>
+                </Field>
                 <Field>
                   <FieldLabel
                     htmlFor="name"
@@ -233,35 +264,6 @@ export default function SignUpPage() {
                       className="h-12 rounded-xl border-white/[0.1] bg-[#111713]/70 pl-10 text-sm text-[#f0f2ec] placeholder:text-[#68756b] focus-visible:border-[#c8e889]/50 focus-visible:ring-[#c8e889]/20"
                     />
                   </div>
-                </Field>
-
-                <Field>
-                  <FieldLabel
-                    htmlFor="role"
-                    className="mb-2 text-xs font-semibold text-[#cbd4c8]"
-                  >
-                    Account role
-                  </FieldLabel>
-                  <select
-                    id="role"
-                    name="role"
-                    required
-                    value={role}
-                    onChange={(event) => {
-                      const selectedRole = accountRoles.find(
-                        (accountRole) => accountRole === event.target.value,
-                      );
-                      if (selectedRole) setRole(selectedRole);
-                    }}
-                    disabled={isPending}
-                    className="h-12 w-full rounded-xl border border-white/[0.1] bg-[#111713]/70 px-3.5 text-sm text-[#e2e8de] outline-none focus:border-[#c8e889]/50 disabled:opacity-60"
-                  >
-                    {accountRoles.map((accountRole) => (
-                      <option key={accountRole} value={accountRole}>
-                        {accountRole}
-                      </option>
-                    ))}
-                  </select>
                 </Field>
 
                 <Field>

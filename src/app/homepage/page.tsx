@@ -1,3 +1,5 @@
+import AnimatedSection from "@/components/animated-section";
+import LiveEquipment from "@/components/live-equipment";
 import {
   ArrowDownRight,
   ArrowRight,
@@ -53,7 +55,7 @@ const assurances = [
 function HomePage() {
   return (
     <main className="overflow-hidden">
-      <section className="mx-auto max-w-[1320px] px-4 pb-14 pt-6 sm:px-6 sm:pt-10 lg:px-8 lg:pb-20">
+      <AnimatedSection className="mx-auto max-w-[1320px] px-4 pb-14 pt-6 sm:px-6 sm:pt-10 lg:px-8 lg:pb-20">
         <div className="relative isolate overflow-hidden rounded-[26px] border border-white/[0.09] bg-[#19221d] sm:rounded-[34px]">
           <div className="absolute inset-0 z-0 bg-[radial-gradient(ellipse_at_18%_10%,rgba(119,153,95,0.17),transparent_42%),linear-gradient(115deg,#18211c_0%,#1b241f_52%,#202922_100%)]" />
           <div
@@ -169,9 +171,9 @@ function HomePage() {
             </div>
           ))}
         </div>
-      </section>
+      </AnimatedSection>
 
-      <section className="mx-auto max-w-[1320px] px-4 pb-20 pt-6 sm:px-6 sm:pb-24 lg:px-8 lg:pt-10">
+      <AnimatedSection className="mx-auto max-w-[1320px] px-4 pb-20 pt-6 sm:px-6 sm:pb-24 lg:px-8 lg:pt-10">
         <div className="mb-7 flex items-end justify-between gap-5 sm:mb-9">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#c8e889] sm:text-[11px]">
@@ -232,7 +234,7 @@ function HomePage() {
           Browse all equipment
           <ArrowDownRight size={16} />
         </Link>
-      </section>
+      </AnimatedSection>
 
       <section className="mx-auto max-w-[1320px] px-4 pb-20 sm:px-6 sm:pb-28 lg:px-8">
         <div className="relative overflow-hidden rounded-[26px] border border-[#c8e889]/15 bg-[#202b23] px-6 py-10 sm:rounded-[30px] sm:px-10 sm:py-12 lg:flex lg:items-center lg:justify-between lg:px-14">
@@ -257,6 +259,34 @@ function HomePage() {
             List your equipment
             <ArrowRight size={16} />
           </Link>
+        </div>
+      </section>
+      <AnimatedSection className="mx-auto max-w-7xl px-5 py-8">
+        <h2 className="text-3xl font-bold">Featured equipment</h2>
+        <LiveEquipment featured />
+      </AnimatedSection>
+      <section className="mx-auto grid max-w-7xl gap-6 px-5 py-10 md:grid-cols-2">
+        <div className="rounded-xl border border-white/15 p-6">
+          <h2 className="text-2xl font-bold">Why rent with MACHORA?</h2>
+          <p className="mt-3">Compare rates and choose daily, weekly, or monthly rentals. Listings are reviewed before they appear in the catalog.</p>
+        </div>
+        <div className="rounded-xl border border-white/15 p-6">
+          <h2 className="text-2xl font-bold">How it works</h2>
+          <p className="mt-3">Find equipment, pick your dates and quantity, then confirm your booking. Arrange payment manually.</p>
+          <Link className="mt-3 inline-block underline" href="/how_it_works">See rental steps</Link>
+        </div>
+      </section>
+      <section className="mx-auto max-w-7xl px-5 py-10">
+        <h2 className="text-2xl font-bold">Sample customer reviews</h2>
+        <div className="mt-5 grid gap-4 sm:grid-cols-2">
+          {[
+            ["Nusrat", 5, "The weekly option fit our project schedule."],
+            ["Rahim", 5, "It was easy to find equipment near the site."],
+            ["Farah", 4, "The listing gave me the terms before I booked."],
+            ["Imran", 5, "I could compare rates in one place."],
+          ].map(([name, rating, comment]) => <figure key={name} className="space-y-2 rounded-xl border border-white/15 p-5">
+            <blockquote>{comment}</blockquote><figcaption>{name} · {rating}/5</figcaption>
+          </figure>)}
         </div>
       </section>
     </main>

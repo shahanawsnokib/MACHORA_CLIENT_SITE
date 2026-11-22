@@ -1,4 +1,4 @@
-import EquipmentBrowser from "@/components/equipment-browser";
+import LiveEquipment from "@/components/live-equipment";
 import { PageIntro, PrimaryLink } from "@/components/marketplace-ui";
 
 export default function BrowseEquipmentPage() {
@@ -11,7 +11,7 @@ export default function BrowseEquipmentPage() {
       >
         <PrimaryLink href="/popular_categories">Explore categories</PrimaryLink>
       </PageIntro>
-      <EquipmentBrowser />
+      <LiveEquipment />
       <section className="mx-auto max-w-[1240px] px-5 pb-16 sm:px-6 lg:px-8">
         <div className="flex flex-col gap-5 rounded-[26px] border border-[#c8e889]/15 bg-[#202b23] p-6 sm:flex-row sm:items-center sm:justify-between sm:p-9">
           <div>

@@ -1,17 +1,14 @@
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
-// import { AppSidebar } from "@/components/app-sidebar"
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { DashboardSidebar } from "../components/DashboardSidebar";
 
-const deshboardlayout = ({ children }: { children: React.ReactNode }) => {
-    return (
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  return (
     <SidebarProvider>
       <DashboardSidebar />
-      <main>
-        <SidebarTrigger />
+      <main className="min-w-0 flex-1">
+        <SidebarTrigger className="ml-4 mt-4" />
         {children}
       </main>
     </SidebarProvider>
-    );
-};
-
-export default deshboardlayout;
+  );
+}

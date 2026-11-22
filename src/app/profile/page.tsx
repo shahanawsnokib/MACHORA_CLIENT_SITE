@@ -1,75 +1,92 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/components/ui/avatar";
+import Link from "next/link";
+import { ArrowLeft, CheckCircle2, UserRound } from "lucide-react";
+import { useState, type FormEvent } from "react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { authClient } from "@/lib/auth-client";
 
-export default function ProfilePage() {
-  const router = useRouter();
-  const { data: session, isPending } = authClient.useSession();
+export default function Profile() {
+  const { data: session, refetch } = authClient.useSession();
+  const [saving, setSaving] = useState(false);
+  const [feedback, setFeedback] = useState<{ ok: boolean; text: string }>();
 
-  // Send signed-out visitors to login after the session check finishes.
-  useEffect(() => {
-    if (!isPending && !session) {
-      router.replace("/login");
-    }
-  }, [isPending, router, session]);
-
-  if (isPending || !session) {
-    return (
-      <main className="flex flex-1 items-center justify-center px-5 py-16">
-        <p className="text-sm text-[#9eaa9f]">Loading your profile...</p>
-      </main>
-    );
-  }
+  if (!session) return <p role="status" className="p-8">Loading profile…</p>;
 
   const { user } = session;
-  const firstInitial = user.name.trim().charAt(0).toUpperCase();
+  const dashboard = "/dashboard/" + (user.role || "Customer").toLowerCase();
+
+  async function saveProfile(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const fields = new FormData(event.currentTarget);
+    const value = (name: string) => String(fields.get(name) ?? "").trim();
+    const name = value("name");
+    if (!name) {
+      setFeedback({ ok: false, text: "Enter your name." });
+      return;
+    }
+
+    setFeedback(undefined);
+    setSaving(true);
+    try {
+      // Better Auth updates the signed-in account using its session cookie.
+      const { error } = await authClient.updateUser({
+        name,
+        image: value("image") || null,
+        phone: value("phone"),
+        address: value("address"),
+      });
+      if (error) {
+        setFeedback({ ok: false, text: error.message || "Could not save your profile." });
+        return;
+      }
+      setFeedback({ ok: true, text: "Profile saved." });
+      // Refresh the session so the new name and photo appear in navigation.
+      void refetch();
+    } catch {
+      setFeedback({ ok: false, text: "Could not save your profile. Please try again." });
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
-    <main className="flex flex-1 items-center justify-center px-5 py-12">
-      <section className="w-full max-w-xl rounded-3xl border border-white/[0.08] bg-[#19211c] p-7 shadow-[0_24px_70px_rgba(0,0,0,0.25)] sm:p-10">
-        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#c8e889]">
-          Account
-        </p>
-        <h1 className="mt-3 text-3xl font-semibold tracking-tight text-[#f0f2ec]">
-          My profile
-        </h1>
-
-        <div className="mt-8 flex items-center gap-4 border-b border-white/[0.08] pb-7">
-          <Avatar size="lg" className="size-16 border border-white/10 bg-[#202b23]">
-            <AvatarImage src={user.image || undefined} alt={user.name} />
-            <AvatarFallback className="bg-[#202b23] text-xl font-bold text-[#c8e889]">
-              {firstInitial}
+    <main className="rental-form mx-auto w-full max-w-4xl px-4 py-8 sm:px-8 sm:py-12">
+      <Link href={dashboard} className="mb-5 inline-flex items-center gap-2 text-sm text-[#c8e889]">
+        <ArrowLeft size={16} aria-hidden="true" /> Back to dashboard
+      </Link>
+      <section className="overflow-hidden rounded-2xl border border-white/10 bg-[#19231c]">
+        <div className="flex items-center gap-4 border-b border-white/10 bg-[#202d23] p-5 sm:p-8">
+          <Avatar className="size-14 border border-white/15 sm:size-16">
+            <AvatarImage src={user.image || undefined} alt="" />
+            <AvatarFallback className="bg-[#304035] text-[#c8e889]">
+              <UserRound aria-hidden="true" size={24} />
             </AvatarFallback>
           </Avatar>
           <div className="min-w-0">
-            <h2 className="truncate text-lg font-semibold text-[#f0f2ec]">
-              {user.name}
-            </h2>
-            <p className="mt-1 truncate text-sm text-[#9eaa9f]">{user.email}</p>
+            <h1 className="text-2xl font-semibold sm:text-3xl">My profile</h1>
+            <p className="truncate text-sm text-[#b4c0b4]">{user.email}</p>
           </div>
         </div>
 
-        <dl className="mt-6 grid gap-5 sm:grid-cols-2">
-          <div>
-            <dt className="text-xs font-semibold text-[#849186]">Role</dt>
-            <dd className="mt-1 text-sm font-medium text-[#dce4d9]">
-              {user.role || "Not set"}
-            </dd>
+        <form onSubmit={saveProfile} className="space-y-5 p-5 sm:p-8">
+          <fieldset disabled={saving} className="grid gap-5 text-sm font-medium sm:grid-cols-2">
+            <label>Full name<input name="name" autoComplete="name" defaultValue={user.name} maxLength={100} required /></label>
+            <label>Sign-in email<input type="email" value={user.email} readOnly className="opacity-70" /></label>
+            <label>Phone number<input name="phone" type="tel" autoComplete="tel" defaultValue={user.phone || ""} maxLength={40} /></label>
+            <label>Profile photo URL<input name="image" type="url" placeholder="https://…" defaultValue={user.image || ""} /></label>
+            <label className="sm:col-span-2">Address<textarea name="address" autoComplete="street-address" rows={3} defaultValue={user.address || ""} maxLength={400} /></label>
+          </fieldset>
+          <div className="flex flex-wrap items-center gap-4 border-t border-white/10 pt-4">
+            <button type="submit" disabled={saving}>{saving ? "Saving…" : "Save changes"}</button>
+            {feedback && (
+              <p role={feedback.ok ? "status" : "alert"} className={feedback.ok ? "flex items-center gap-2 text-sm text-[#c8e889]" : "text-sm text-red-300"}>
+                {feedback.ok && <CheckCircle2 size={16} aria-hidden="true" />}
+                {feedback.text}
+              </p>
+            )}
           </div>
-          <div>
-            <dt className="text-xs font-semibold text-[#849186]">Email</dt>
-            <dd className="mt-1 truncate text-sm font-medium text-[#dce4d9]">
-              {user.email}
-            </dd>
-          </div>
-        </dl>
+        </form>
       </section>
     </main>
   );

@@ -31,7 +31,8 @@ const roleBaseDashboardMenuItems = {
   ],
   Owner: [
     { name: "Dashboard", url: "/dashboard/owner", icon: LayoutDashboard },
-    { name: "List equipment", url: "/list_equipement", icon: Wrench },
+    { name: "My equipment", url: "/dashboard/owner#listings", icon: Boxes },
+    { name: "Add equipment", url: "/dashboard/owner#equipment-form", icon: Wrench },
     { name: "My profile", url: "/profile", icon: UserRound },
   ],
   Admin: [
