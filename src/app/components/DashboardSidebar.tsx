@@ -3,10 +3,12 @@
 import Link from "next/link";
 import {
   Boxes,
+  CalendarDays,
   LayoutDashboard,
   Search,
   ShieldCheck,
   UserRound,
+  Users,
   Wrench,
 } from "lucide-react";
 import { useSession } from "@/lib/auth-client";
@@ -37,6 +39,9 @@ const roleBaseDashboardMenuItems = {
   ],
   Admin: [
     { name: "Dashboard", url: "/dashboard/admin", icon: LayoutDashboard },
+    { name: "All users", url: "/dashboard/admin#users", icon: Users },
+    { name: "All equipment", url: "/dashboard/admin#listings", icon: Boxes },
+    { name: "All rentals", url: "/dashboard/admin#rentals", icon: CalendarDays },
     { name: "My profile", url: "/profile", icon: UserRound },
   ],
 };
