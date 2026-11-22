@@ -9,5 +9,5 @@ export default async function Page({ params, searchParams }: {
   const openBooking = (await searchParams).book === "1";
   const path = "/browse_equipment/" + id + (openBooking ? "?book=1" : "");
   const user = await requireUser(undefined, path);
-  return <RentalDetails key={id} id={id} openBooking={openBooking} canBook={!user.role || user.role === "Customer"} />;
+  return <RentalDetails key={id + (openBooking ? "-booking" : "")} id={id} openBooking={openBooking} phone={user.phone || undefined} address={user.address || undefined} canBook={!user.role || user.role === "Customer"} />;
 }

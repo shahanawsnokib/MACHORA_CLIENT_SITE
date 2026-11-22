@@ -1,5 +1,7 @@
 "use client";
 
+import { showToast } from "@/lib/toast";
+
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { equipmentCategories } from "@/lib/marketplace-data";
@@ -17,9 +19,14 @@ export default function LiveEquipment({ featured = false }: { featured?: boolean
         if (!current) return;
         setItems(rows);
         setMessage(rows.length ? "" : "No approved equipment found.");
+        if (!featured && query) showToast(rows.length ? `${rows.length} equipment listings found.` : "No equipment matches those filters.", "info");
       })
       .catch(() => {
-        if (current) { setItems([]); setMessage("Could not load equipment. Check that the API is running."); }
+        if (!current) return;
+        const message = "Could not load equipment. Check that the API is running.";
+        setItems([]);
+        setMessage(message);
+        if (!featured && query) showToast(message, "error");
       });
     return () => { current = false; };
   }, [featured, query]);

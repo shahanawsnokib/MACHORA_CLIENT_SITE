@@ -1,5 +1,7 @@
 "use client";
 
+import { showToast } from "@/lib/toast";
+
 import Link from "next/link";
 import { ArrowLeft, CheckCircle2, UserRound } from "lucide-react";
 import { useState, type FormEvent } from "react";
@@ -10,6 +12,11 @@ export default function Profile() {
   const { data: session, refetch } = authClient.useSession();
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState<{ ok: boolean; text: string }>();
+
+  function reportFeedback(result: { ok: boolean; text: string }) {
+    setFeedback(result);
+    showToast(result.text, result.ok ? "success" : "error");
+  }
 
   if (!session) return <p role="status" className="p-8">Loading profile…</p>;
 
@@ -22,7 +29,7 @@ export default function Profile() {
     const value = (name: string) => String(fields.get(name) ?? "").trim();
     const name = value("name");
     if (!name) {
-      setFeedback({ ok: false, text: "Enter your name." });
+      reportFeedback({ ok: false, text: "Enter your name." });
       return;
     }
 
@@ -37,14 +44,14 @@ export default function Profile() {
         address: value("address"),
       });
       if (error) {
-        setFeedback({ ok: false, text: error.message || "Could not save your profile." });
+        reportFeedback({ ok: false, text: error.message || "Could not save your profile." });
         return;
       }
-      setFeedback({ ok: true, text: "Profile saved." });
+      reportFeedback({ ok: true, text: "Profile saved." });
       // Refresh the session so the new name and photo appear in navigation.
       void refetch();
     } catch {
-      setFeedback({ ok: false, text: "Could not save your profile. Please try again." });
+      reportFeedback({ ok: false, text: "Could not save your profile. Please try again." });
     } finally {
       setSaving(false);
     }

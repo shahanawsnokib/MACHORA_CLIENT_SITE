@@ -1,5 +1,7 @@
 "use client";
 
+import { showToast } from "@/lib/toast";
+
 import { authClient } from "@/lib/auth-client";
 import {
   ArrowUpRight,
@@ -115,6 +117,11 @@ export default function Navbar() {
 
   const closeMenu = () => setMenuOpen(false);
 
+  function reportError(message: string) {
+    setSignOutError(message);
+    showToast(message, "error");
+  }
+
   async function handleSignOut() {
     setSignOutError("");
     setIsSigningOut(true);
@@ -122,13 +129,14 @@ export default function Navbar() {
     try {
       const result = await authClient.signOut();
       if (result.error) {
-        setSignOutError(result.error.message || "Unable to sign out.");
+        reportError(result.error.message || "Unable to sign out.");
         return;
       }
 
       closeMenu();
+      showToast("Signed out.");
     } catch (error) {
-      setSignOutError(
+      reportError(
         error instanceof Error ? error.message : "Unable to sign out.",
       );
     } finally {

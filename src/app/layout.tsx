@@ -1,3 +1,4 @@
+import ToastViewport from "@/components/toast-viewport";
 import { Suspense } from "react";
 import AuthNotice from "@/components/auth-notice";
 import type { Metadata } from "next";
@@ -29,6 +30,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col">
         <Navbar />
+        <ToastViewport />
         <Suspense><AuthNotice /></Suspense>
         {children}
         <Footer />

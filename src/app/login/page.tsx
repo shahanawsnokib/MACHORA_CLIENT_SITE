@@ -1,5 +1,7 @@
 "use client";
 
+import { showToast } from "@/lib/toast";
+
 import { useState, type FormEvent } from "react";
 import {
   ArrowRight,
@@ -37,6 +39,11 @@ export default function LoginPage() {
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
   const [errorMessage, setErrorMessage] = useState("");
 
+  function reportError(message: string) {
+    setErrorMessage(message);
+    showToast(message, "error");
+  }
+
   function signedInPath() {
     const next = new URLSearchParams(window.location.search).get("next");
     if (next === "/dashboard/owner#equipment-form") {
@@ -65,7 +72,7 @@ export default function LoginPage() {
 
       // Keep the user on this page and show a useful message if sign-in fails.
       if (result.error) {
-        setErrorMessage(result.error.message || "Unable to sign in. Please try again.");
+        reportError(result.error.message || "Unable to sign in. Please try again.");
         return;
       }
 
@@ -73,7 +80,7 @@ export default function LoginPage() {
       router.replace(signedInPath());
       router.refresh();
     } catch (error) {
-      setErrorMessage(
+      reportError(
         error instanceof Error
           ? error.message
           : "Unable to sign in. Please try again.",
@@ -95,12 +102,12 @@ export default function LoginPage() {
       });
 
       if (result.error) {
-        setErrorMessage(
+        reportError(
           result.error.message || `Unable to sign in with ${provider}.`,
         );
       }
     } catch (error) {
-      setErrorMessage(
+      reportError(
         error instanceof Error
           ? error.message
           : `Unable to sign in with ${provider}.`,

@@ -1,3 +1,6 @@
+"use client";
+
+import { showToast } from "@/lib/toast";
 import { ArrowUpRight, Mail, MapPin, Phone } from "lucide-react";
 import Link from "next/link";
 
@@ -65,12 +68,13 @@ export default function Footer() {
             <h2 className="text-[11px] font-black uppercase tracking-[0.22em] text-[#c8e889]">
               Get updates
             </h2>
-            <form className="mt-5 flex rounded-full border border-white/[0.1] bg-white/[0.035] p-1.5">
+            <form onSubmit={(event) => { event.preventDefault(); showToast("Newsletter signup is not available yet.", "info"); }} className="mt-5 flex rounded-full border border-white/[0.1] bg-white/[0.035] p-1.5">
               <label htmlFor="footer-email" className="sr-only">
                 Email address
               </label>
               <input
                 id="footer-email"
+                required
                 type="email"
                 placeholder="Your email"
                 className="min-w-0 flex-1 bg-transparent px-3 text-sm text-[#eef1e8] outline-none placeholder:text-[#77827a]"

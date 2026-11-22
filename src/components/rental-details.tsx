@@ -1,18 +1,20 @@
 "use client";
 
-import { ArrowLeft, CalendarDays, Heart, MapPin, Package, X } from "lucide-react";
+import { showToast } from "@/lib/toast";
+
+import { ArrowLeft, CalendarDays, Heart, MapPin, Package } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { rentalApi, type Equipment } from "@/lib/rental-api";
 
-export default function RentalDetails({ id, canBook, openBooking }: { id: string; canBook: boolean; openBooking: boolean }) {
+export default function RentalDetails({ id, canBook, openBooking, phone, address }: { id: string; canBook: boolean; openBooking: boolean; phone?: string; address?: string }) {
   const [item, setItem] = useState<Equipment>();
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState("");
   const [bookingError, setBookingError] = useState("");
   const [booked, setBooked] = useState(false);
   const [busy, setBusy] = useState(false);
-  const dialog = useRef<HTMLDialogElement>(null);
+  const [onlineNotice, setOnlineNotice] = useState(false);
 
   useEffect(() => {
     let current = true;
@@ -24,28 +26,24 @@ export default function RentalDetails({ id, canBook, openBooking }: { id: string
   }, [id]);
 
   const quantity = item?.quantity ?? 0;
-  useEffect(() => {
-    const form = dialog.current;
-    if (openBooking && canBook && quantity > 0 && form && !form.open) form.showModal();
-  }, [openBooking, canBook, quantity, id]);
 
   async function submitBooking(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const form = event.currentTarget;
-    const fields = Object.fromEntries(new FormData(form));
+    const fields = Object.fromEntries(new FormData(event.currentTarget));
     setBusy(true);
     setBookingError("");
+    setOnlineNotice(false);
     try {
       await rentalApi("/bookings", {
         method: "POST",
-        body: JSON.stringify({ ...fields, equipmentId: id }),
+        body: JSON.stringify({ ...fields, equipmentId: id, paymentMethod: "Cash on delivery" }),
       }, true);
-      form.reset();
-      dialog.current?.close();
       setBooked(true);
-      setNotice("Rental confirmed. Payment is arranged manually.");
+      showToast("Booking confirmed. Pay on delivery.");
     } catch (error) {
-      setBookingError(error instanceof Error ? error.message : "Booking failed.");
+      const message = error instanceof Error ? error.message : "Booking failed.";
+      setBookingError(message);
+      showToast(message, "error");
     } finally {
       setBusy(false);
     }
@@ -55,8 +53,11 @@ export default function RentalDetails({ id, canBook, openBooking }: { id: string
     try {
       await rentalApi("/favorites/" + id, { method: "PUT" }, true);
       setNotice("Saved to favorites.");
+      showToast("Saved to favorites.");
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : "Could not save this favorite.");
+      const message = error instanceof Error ? error.message : "Could not save this favorite.";
+      setNotice(message);
+      showToast(message, "error");
     }
   }
 
@@ -70,6 +71,52 @@ export default function RentalDetails({ id, canBook, openBooking }: { id: string
   }
 
   const price = item.price.toLocaleString("en-BD");
+  const detailPath = "/browse_equipment/" + id;
+
+  if (openBooking && canBook && quantity > 0) {
+    return (
+      <main className="rental-form mx-auto w-full max-w-2xl px-5 py-8 sm:py-12">
+        <Link href={detailPath} className="mb-5 inline-flex items-center gap-2 text-sm text-[#c8e889]">
+          <ArrowLeft size={16} aria-hidden="true" /> Back to equipment details
+        </Link>
+        <section className="rounded-2xl border border-white/10 bg-[#19231c] p-5 sm:p-8">
+          <h1 className="text-2xl font-semibold sm:text-3xl">Book {item.name}</h1>
+          <p className="mt-2 text-sm text-[#bac8b9]">৳{price} · {item.rentalType} · {quantity} available</p>
+
+          {booked ? (
+            <div className="mt-6 space-y-3">
+              <p role="status" className="font-medium text-[#c8e889]">Booking confirmed. Pay when the equipment is delivered.</p>
+              <Link href="/dashboard/customer#rentals">View my rentals</Link>
+            </div>
+          ) : (
+            <form onSubmit={submitBooking} className="mt-6 space-y-5">
+              <fieldset disabled={busy} className="grid gap-4 text-sm sm:grid-cols-2">
+                <label>Start date<input required type="date" name="start" /></label>
+                <label>End date<input required type="date" name="end" /></label>
+                <label>Quantity<input required type="number" name="quantity" min="1" max={quantity} defaultValue="1" /></label>
+                <label>Contact number<input required type="tel" name="phone" autoComplete="tel" defaultValue={phone} /></label>
+                <label className="sm:col-span-2">Delivery address<textarea required rows={2} name="address" autoComplete="street-address" defaultValue={address} /></label>
+                <label className="sm:col-span-2">Notes <span className="text-[#bac8b9]">(optional)</span><textarea rows={2} name="notes" /></label>
+              </fieldset>
+              {bookingError && <p role="alert" className="text-sm text-red-300">{bookingError}</p>}
+              {onlineNotice && <p role="status" className="text-sm text-[#bac8b9]">Online payment is not available yet. You can choose cash on delivery.</p>}
+              <div className="grid gap-3 border-t border-white/10 pt-5 sm:grid-cols-2">
+                <button type="submit" disabled={busy}>{busy ? "Booking…" : "Cash on delivery"}</button>
+                <button type="button" disabled={busy} className="border border-white/15 !bg-transparent !text-[#c8e889]" onClick={() => {
+                  setOnlineNotice(true);
+                  showToast("Online payment is not available yet.", "info");
+                }}>
+                  Pay online
+                </button>
+              </div>
+            </form>
+          )}
+        </section>
+      </main>
+    );
+  }
+
+
   const facts = [
     ["Brand", item.brand],
     ["Model", item.model],
@@ -103,12 +150,10 @@ export default function RentalDetails({ id, canBook, openBooking }: { id: string
             <Package size={17} aria-hidden="true" /> {quantity > 0 ? `${quantity} available` : "Out of stock"}
           </p>
           <div className="mt-5 grid gap-3">
-            {canBook || quantity < 1 ? (
-              <button type="button" className="inline-flex items-center justify-center gap-2" disabled={quantity < 1} onClick={() => { setBookingError(""); dialog.current?.showModal(); }}>
-                <CalendarDays size={17} aria-hidden="true" /> Book now
-              </button>
+            {quantity < 1 ? (
+              <button type="button" disabled>Book now</button>
             ) : (
-              <Link href={"/login?next=" + encodeURIComponent("/browse_equipment/" + id + "?book=1")} className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#c8e889] px-3 py-2 font-semibold text-[#19211c] !no-underline hover:bg-[#d7eeac]">
+              <Link href={canBook ? detailPath + "?book=1" : "/login?next=" + encodeURIComponent(detailPath + "?book=1")} className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#c8e889] px-3 py-2 font-semibold text-[#19211c] !no-underline hover:bg-[#d7eeac]">
                 <CalendarDays size={17} aria-hidden="true" /> Book now
               </Link>
             )}
@@ -120,7 +165,6 @@ export default function RentalDetails({ id, canBook, openBooking }: { id: string
           </div>
           {!canBook && quantity > 0 && <p className="mt-3 text-sm text-[#bac8b9]">Use a Customer account to book this equipment.</p>}
           {notice && <p role="status" className="mt-4 text-sm text-[#e2f3ca]">{notice}</p>}
-          {booked && <Link className="mt-2 inline-block text-sm text-[#c8e889]" href="/dashboard/customer#rentals">View my rentals</Link>}
         </aside>
 
         <div className="min-w-0 space-y-6 lg:col-start-1 lg:row-start-2">
@@ -144,29 +188,6 @@ export default function RentalDetails({ id, canBook, openBooking }: { id: string
         </div>
       </div>
 
-      <dialog ref={dialog} aria-labelledby="booking-title" className="m-auto max-h-[90vh] w-[min(94vw,36rem)] overflow-y-auto rounded-2xl border border-white/15 bg-[#19231c] p-5 text-[#edf2e6] backdrop:bg-black/70 sm:p-7">
-        <div className="mb-5 flex items-start justify-between gap-4 border-b border-white/10 pb-4">
-          <div>
-            <h2 id="booking-title" className="text-xl font-semibold">Book {item.name}</h2>
-            <p className="mt-1 text-sm text-[#bac8b9]">৳{price} · {item.rentalType} · Payment arranged manually</p>
-          </div>
-          <button type="button" aria-label="Close booking form" disabled={busy} className="!bg-transparent !p-1 !text-[#c8e889]" onClick={() => dialog.current?.close()}>
-            <X size={21} aria-hidden="true" />
-          </button>
-        </div>
-        <form onSubmit={submitBooking} className="space-y-4">
-          <fieldset disabled={busy} className="grid gap-4 text-sm sm:grid-cols-2">
-            <label>Start date<input required type="date" name="start" /></label>
-            <label>End date<input required type="date" name="end" /></label>
-            <label>Quantity<input required type="number" name="quantity" min="1" max={quantity} defaultValue="1" /></label>
-            <label>Contact number<input required type="tel" name="phone" autoComplete="tel" /></label>
-            <label className="sm:col-span-2">Delivery address<input required name="address" autoComplete="street-address" /></label>
-            <label className="sm:col-span-2">Notes <span className="text-[#bac8b9]">(optional)</span><textarea rows={2} name="notes" /></label>
-          </fieldset>
-          {bookingError && <p role="alert" className="text-sm text-red-300">{bookingError}</p>}
-          <button type="submit" className="w-full" disabled={busy}>{busy ? "Booking…" : "Confirm booking"}</button>
-        </form>
-      </dialog>
     </main>
   );
 }

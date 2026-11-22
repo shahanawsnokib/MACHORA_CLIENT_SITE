@@ -1,17 +1,19 @@
 "use client";
 
+import { showToast } from "@/lib/toast";
+
 import Link from "next/link";
 import { Boxes, CalendarDays, CircleCheck, Plus, ShieldCheck, UserRound, Users, Wallet } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { equipmentCategories } from "@/lib/marketplace-data";
 import { rentalApi, type Equipment } from "@/lib/rental-api";
 
 type Booking = {
   _id: string; equipmentName: string; customerName: string; ownerName: string;
   start: string; end: string; createdAt: string; quantity: number; total: number;
-  status: string; paymentStatus: string; phone?: string; address?: string;
+  status: string; paymentStatus: string; paymentMethod?: string; phone?: string; address?: string; notes?: string;
 };
-type User = { _id: string; name: string; email: string; role?: string; createdAt: string };
+type User = { _id: string; name: string; email: string; role?: string; createdAt: string; image?: string | null; phone?: string; address?: string };
 type Role = "Customer" | "Owner" | "Admin";
 
 const fields = ["name", "description", "location", "condition", "brand", "model", "terms"] as const;
@@ -20,6 +22,10 @@ export default function RentalDashboard({ role }: { role: Role }) {
   const [items, setItems] = useState<Equipment[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [users, setUsers] = useState<User[]>([]);
+  const [editingUser, setEditingUser] = useState<User>();
+  const [savingUser, setSavingUser] = useState(false);
+  const [userError, setUserError] = useState("");
+  const userDialog = useRef<HTMLDialogElement>(null);
   const [editing, setEditing] = useState<Equipment>();
   const [message, setMessage] = useState("Loading dashboard…");
   const [version, setVersion] = useState(0);
@@ -42,15 +48,52 @@ export default function RentalDashboard({ role }: { role: Role }) {
     return () => { current = false; };
   }, [equipmentPath, role, version]);
 
-  async function save(path: string, method: string, body?: object) {
+  async function save(path: string, method: string, body?: object, success = "Changes saved.") {
     try {
       await rentalApi(path, { method, body: body ? JSON.stringify(body) : undefined }, true);
-      setMessage("Saved.");
+      setMessage(success);
+      showToast(success);
       setVersion((previous) => previous + 1);
       return true;
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Could not save.");
+      const message = error instanceof Error ? error.message : "Could not save.";
+      setMessage(message);
+      showToast(message, "error");
       return false;
+    }
+  }
+
+  useEffect(() => {
+    const dialog = userDialog.current;
+    if (editingUser && dialog && !dialog.open) dialog.showModal();
+  }, [editingUser]);
+
+  function editUser(user: User) {
+    setEditingUser(user);
+    setUserError("");
+  }
+
+  async function saveUserProfile(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!editingUser) return;
+    const profile = Object.fromEntries(new FormData(event.currentTarget));
+    setSavingUser(true);
+    setUserError("");
+    try {
+      const updated = await rentalApi<User>("/admin/users/" + editingUser._id + "/profile", {
+        method: "PATCH",
+        body: JSON.stringify(profile),
+      }, true);
+      setUsers((previous) => previous.map((user) => user._id === updated._id ? updated : user));
+      setMessage("User profile saved.");
+      showToast("User profile saved.");
+      userDialog.current?.close();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Could not save the user profile.";
+      setUserError(message);
+      showToast(message, "error");
+    } finally {
+      setSavingUser(false);
     }
   }
 
@@ -107,7 +150,7 @@ export default function RentalDashboard({ role }: { role: Role }) {
       {role === "Admin" && <a href="#users">Users</a>}
       <Link href="/profile">Profile</Link>
     </nav>
-    {message && <p role="status">{message}</p>}
+    {message && message !== "User profile saved." && <p role="status">{message}</p>}
     {role !== "Customer" && <section className="space-y-3">
       <h2 className="text-xl font-bold">Overview</h2>
       <dl className={"grid grid-cols-2 gap-3 " + (role === "Admin" ? "lg:grid-cols-3 2xl:grid-cols-6" : "xl:grid-cols-4")}>
@@ -133,11 +176,11 @@ export default function RentalDashboard({ role }: { role: Role }) {
       {bookings.length ? <div className="overflow-x-auto"><table className={hasOverview ? "min-w-[640px] text-sm" : ""}>
         <thead><tr><th>Equipment</th>{role !== "Customer" && <th>Customer</th>}{role === "Admin" && <th>Owner</th>}<th>Dates</th><th>Booked</th><th>Qty</th><th>Total</th><th>Payment</th><th>Status</th>{role === "Admin" && <th>Actions</th>}</tr></thead>
         <tbody>{bookings.map((row) => <tr key={row._id}>
-          <td>{row.equipmentName}</td>{role !== "Customer" && <td><p>{row.customerName}</p>{row.phone && <p>{row.phone}</p>}{row.address && <p>{row.address}</p>}</td>}{role === "Admin" && <td>{row.ownerName}</td>}
-          <td>{row.start.slice(0, 10)} – {row.end.slice(0, 10)}</td><td>{row.createdAt.slice(0, 10)}</td><td>{row.quantity}</td><td>৳{row.total}</td><td>{row.paymentStatus}</td><td>{row.status}</td>
+          <td>{row.equipmentName}</td>{role !== "Customer" && <td className="min-w-40"><p className="font-medium">{row.customerName}</p>{row.phone && <p className="text-xs text-[#bac8b9]">{row.phone}</p>}{row.address && <p className="text-xs text-[#bac8b9]">{row.address}</p>}{row.notes && <p className="mt-1 text-xs text-[#bac8b9]">Notes: {row.notes}</p>}</td>}{role === "Admin" && <td>{row.ownerName}</td>}
+          <td>{row.start.slice(0, 10)} – {row.end.slice(0, 10)}</td><td>{row.createdAt.slice(0, 10)}</td><td>{row.quantity}</td><td>৳{row.total}</td><td><p>{row.paymentStatus}</p>{row.paymentMethod && <p className="text-xs text-[#bac8b9]">{row.paymentMethod}</p>}</td><td>{row.status}</td>
           {role === "Admin" && <td><div className="flex flex-wrap gap-2">
-            <button onClick={() => save("/admin/bookings/" + row._id, "PATCH", { paymentStatus: row.paymentStatus === "Paid" ? "Unpaid" : "Paid" })}>{row.paymentStatus === "Paid" ? "Mark unpaid" : "Mark paid"}</button>
-            {row.status === "Confirmed" && <><button onClick={() => save("/admin/bookings/" + row._id, "PATCH", { status: "Completed" })}>Complete</button><button onClick={() => save("/admin/bookings/" + row._id, "PATCH", { status: "Cancelled" })}>Cancel</button></>}
+            <button onClick={() => save("/admin/bookings/" + row._id, "PATCH", { paymentStatus: row.paymentStatus === "Paid" ? "Unpaid" : "Paid" }, "Payment status updated.")}>{row.paymentStatus === "Paid" ? "Mark unpaid" : "Mark paid"}</button>
+            {row.status === "Confirmed" && <><button onClick={() => save("/admin/bookings/" + row._id, "PATCH", { status: "Completed" }, "Rental completed.")}>Complete</button><button onClick={() => save("/admin/bookings/" + row._id, "PATCH", { status: "Cancelled" }, "Rental cancelled.")}>Cancel</button></>}
           </div></td>}
         </tr>)}</tbody>
       </table></div> : <p className={hasOverview ? "rounded-xl border border-dashed border-white/15 p-5 text-sm text-[#b4c0b4]" : ""}>No rentals yet.</p>}
@@ -152,10 +195,10 @@ export default function RentalDashboard({ role }: { role: Role }) {
             <Link href={"/browse_equipment/" + row._id}>Details</Link>
             {role !== "Customer" && <a href="#equipment-form" onClick={() => setEditing(row)}>Edit</a>}
             <button onClick={() => {
-              if (role === "Customer" || window.confirm("Delete this listing?")) void save(equipmentPath + "/" + row._id, "DELETE");
+              if (role === "Customer" || window.confirm("Delete this listing?")) void save(equipmentPath + "/" + row._id, "DELETE", undefined, role === "Customer" ? "Removed from favorites." : "Equipment deleted.");
             }}>{role === "Customer" ? "Remove" : "Delete"}</button>
             {role === "Admin" && ["Approved", "Rejected"].filter((status) => row.status !== status).map((status) =>
-              <button key={status} onClick={() => save(equipmentPath + "/" + row._id, "PATCH", { status })}>{status === "Approved" ? "Approve" : "Reject"}</button>
+              <button key={status} onClick={() => save(equipmentPath + "/" + row._id, "PATCH", { status }, status === "Approved" ? "Equipment approved." : "Equipment rejected.")}>{status === "Approved" ? "Approve" : "Reject"}</button>
             )}
           </div></td>
         </tr>)}</tbody>
@@ -181,12 +224,14 @@ export default function RentalDashboard({ role }: { role: Role }) {
             if (!response.ok) throw new Error(result.message);
             data.set("image", result.url);
           }
-          if (await save(equipmentPath + (editing ? "/" + editing._id : ""), editing ? "PATCH" : "POST", Object.fromEntries(data))) {
+          if (await save(equipmentPath + (editing ? "/" + editing._id : ""), editing ? "PATCH" : "POST", Object.fromEntries(data), editing ? "Equipment updated." : "Equipment submitted for approval.")) {
             form.reset();
             setEditing(undefined);
           }
         } catch (error) {
-          setMessage(error instanceof Error ? error.message : "Image upload failed.");
+          const message = error instanceof Error ? error.message : "Image upload failed.";
+          setMessage(message);
+          showToast(message, "error");
         }
       }}>
         {fields.map((name) => <label key={name} className="capitalize">{name}<input name={name} defaultValue={editing?.[name]} required /></label>)}
@@ -201,12 +246,35 @@ export default function RentalDashboard({ role }: { role: Role }) {
     </section>}
     {role === "Admin" && <section id="users" className={panel + " scroll-mt-5 space-y-3"}>
       <h2 className="text-xl font-bold">All users</h2>
-      <div className="overflow-x-auto"><table className="min-w-[520px] text-sm [&_tbody_tr:hover]:bg-white/5 [&_thead]:text-[#bac8b9]"><thead><tr><th>Name</th><th>Email</th><th>Registered</th><th>Role</th></tr></thead>
+      {message === "User profile saved." && <p role="status" className="text-sm text-[#c8e889]">{message}</p>}
+      <div className="overflow-x-auto"><table className="min-w-[520px] text-sm [&_tbody_tr:hover]:bg-white/5 [&_thead]:text-[#bac8b9]"><thead><tr><th>Name</th><th>Email</th><th>Registered</th><th>Role</th><th>Actions</th></tr></thead>
         <tbody>{users.map((user) => <tr key={user._id}><td>{user.name}</td><td>{user.email}</td><td>{user.createdAt?.slice(0, 10)}</td>
-          <td><select aria-label={"Role for " + user.name} value={user.role || "Customer"} onChange={(event) => save("/admin/users/" + user._id, "PATCH", { role: event.target.value })}>
+          <td><select aria-label={"Role for " + user.name} value={user.role || "Customer"} onChange={(event) => save("/admin/users/" + user._id, "PATCH", { role: event.target.value }, "User role updated.")}>
             <option>Customer</option><option>Owner</option><option>Admin</option>
-          </select></td></tr>)}</tbody>
+          </select></td>
+          <td><button type="button" onClick={() => editUser(user)}>Edit user</button></td></tr>)}</tbody>
       </table></div>
+      <dialog ref={userDialog} onClose={() => setEditingUser(undefined)} onCancel={(event) => { if (savingUser) event.preventDefault(); }} aria-labelledby="edit-user-title" className="m-auto max-h-[90vh] w-[min(94vw,32rem)] overflow-y-auto rounded-2xl border border-white/15 bg-[#19231c] p-5 text-[#edf2e6] backdrop:bg-black/70 sm:p-6">
+        {editingUser && (
+          <form key={editingUser._id} onSubmit={saveUserProfile} className="space-y-4">
+            <div>
+              <h3 id="edit-user-title" className="text-xl font-semibold">Edit user</h3>
+              <p className="mt-1 break-all text-sm text-[#bac8b9]">{editingUser.email}</p>
+            </div>
+            <fieldset disabled={savingUser} className="grid gap-3 text-sm">
+              <label>Full name<input name="name" defaultValue={editingUser.name} required maxLength={100} /></label>
+              <label>Phone number<input name="phone" type="tel" defaultValue={editingUser.phone || ""} maxLength={40} /></label>
+              <label>Address<textarea name="address" rows={2} defaultValue={editingUser.address || ""} maxLength={400} /></label>
+              <label>Profile photo URL<input name="image" type="url" defaultValue={editingUser.image || ""} maxLength={2048} /></label>
+            </fieldset>
+            {userError && <p role="alert" className="text-sm text-red-300">{userError}</p>}
+            <div className="flex flex-wrap gap-3">
+              <button type="submit" disabled={savingUser}>{savingUser ? "Saving…" : "Save changes"}</button>
+              <button type="button" disabled={savingUser} className="border border-white/15 !bg-transparent !text-[#c8e889]" onClick={() => userDialog.current?.close()}>Cancel</button>
+            </div>
+          </form>
+        )}
+      </dialog>
     </section>}
   </div>;
 }

@@ -1,3 +1,6 @@
+"use client";
+
+import { showToast } from "@/lib/toast";
 import {
   Clock3,
   Mail,
@@ -104,6 +107,7 @@ export default function ContactPage() {
             This form opens your email app with your message ready to send.
           </p>
           <form
+            onSubmit={() => showToast("Opening your email app…", "info")}
             action="mailto:hello@machora.com"
             method="post"
             encType="text/plain"

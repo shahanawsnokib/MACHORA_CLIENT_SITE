@@ -1,5 +1,7 @@
 "use client";
 
+import { showToast } from "@/lib/toast";
+
 import { useState, type FormEvent } from "react";
 import {
   ArrowRight,
@@ -32,12 +34,17 @@ export default function SignUpPage() {
   const [isPending, setIsPending] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
+  function reportError(message: string) {
+    setErrorMessage(message);
+    showToast(message, "error");
+  }
+
   async function handleSignUp(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setErrorMessage("");
 
     if (!name.trim()) {
-      setErrorMessage("Please enter your name.");
+      reportError("Please enter your name.");
       return;
     }
 
@@ -45,14 +52,14 @@ export default function SignUpPage() {
     const hasLowercase = /[a-z]/.test(password);
 
     if (password.length < 6 || !hasUppercase || !hasLowercase) {
-      setErrorMessage(
+      reportError(
         "Use at least 6 characters, including an uppercase and a lowercase letter.",
       );
       return;
     }
 
     if (password !== confirmPassword) {
-      setErrorMessage("Your passwords do not match.");
+      reportError("Your passwords do not match.");
       return;
     }
 
@@ -70,7 +77,7 @@ export default function SignUpPage() {
       });
 
       if (result.error) {
-        setErrorMessage(
+        reportError(
           result.error.message ||
             "Unable to create your account. Please try again.",
         );
@@ -81,7 +88,7 @@ export default function SignUpPage() {
         ? "/dashboard/owner?auth=registered#equipment-form"
         : "/?auth=registered");
     } catch (error) {
-      setErrorMessage(
+      reportError(
         error instanceof Error
           ? error.message
           : "Unable to create your account. Please try again.",
