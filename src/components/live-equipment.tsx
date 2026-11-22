@@ -2,6 +2,7 @@
 
 import { showToast } from "@/lib/toast";
 
+import { MapPin } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { equipmentCategories } from "@/lib/marketplace-data";
@@ -48,20 +49,51 @@ export default function LiveEquipment({ featured = false }: { featured?: boolean
       </form>}
       {message && <p role="status">{message}</p>}
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {items.map((item) => <article className="overflow-hidden rounded-xl border border-white/15" key={item._id}>
-          <div aria-hidden className="h-44 bg-cover bg-center" style={{ backgroundImage: `url("${item.image}")` }} />
-          <div className="space-y-2 p-4">
-            <h3 className="text-lg font-bold">{item.name}</h3>
-            <p>{item.category} · {item.location}</p>
-            <p>৳{item.price} · {item.rentalType} · {item.quantity ? "Available" : "Unavailable"}</p>
-            <div className="flex flex-wrap items-center gap-3 pt-2">
-              <Link href={"/browse_equipment/" + item._id}>View details</Link>
-              {item.quantity > 0 ? (
-                <Link className="rounded-lg bg-[#c8e889] px-3 py-2 text-sm font-semibold text-[#19211c] !no-underline hover:bg-[#d7eeac]" href={"/browse_equipment/" + item._id + "?book=1"}>Book now</Link>
-              ) : <button type="button" disabled>Book now</button>}
-            </div>
-          </div>
-        </article>)}
+        {items.map((item) => {
+          const detailPath = "/browse_equipment/" + item._id;
+          const available = item.quantity > 0;
+
+          return (
+            <article key={item._id} className="group flex h-full flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#19231c] transition-colors hover:border-[#c8e889]/40">
+              <div className="relative aspect-video overflow-hidden bg-[#24342a]">
+                <div
+                  aria-hidden="true"
+                  className="absolute inset-0 bg-cover bg-center motion-safe:transition-transform motion-safe:duration-300 motion-safe:group-hover:scale-105"
+                  style={{ backgroundImage: `url("${item.image}")` }}
+                />
+                <span className="absolute right-3 top-3 inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-[#111812] px-2.5 py-1 text-xs font-medium text-[#edf2e6]">
+                  <span aria-hidden="true" className={available ? "size-2 rounded-full bg-[#c8e889]" : "size-2 rounded-full bg-[#b0b9b0]"} />
+                  {available ? "Available" : "Out of stock"}
+                </span>
+              </div>
+
+              <div className="flex flex-1 flex-col p-4 sm:p-5">
+                <p className="text-xs font-medium text-[#c8e889]">{item.category}</p>
+                <h3 className="mt-1 break-words text-lg font-semibold leading-snug">{item.name}</h3>
+                <p className="mt-2 flex items-center gap-1.5 text-sm text-[#bac8b9]">
+                  <MapPin size={15} aria-hidden="true" className="shrink-0" /> {item.location}
+                </p>
+
+                <div className="mt-auto pt-4">
+                  <p className="border-t border-white/10 pt-3 text-xl font-semibold tabular-nums text-[#e2f3ca]">
+                    ৳{item.price.toLocaleString("en-BD")}
+                    <span className="ml-2 text-sm font-normal text-[#bac8b9]">{item.rentalType}</span>
+                  </p>
+                  <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
+                    <Link href={detailPath} className="inline-flex min-h-10 items-center justify-center rounded-lg border border-white/15 px-2 text-center font-medium !no-underline hover:bg-white/5">
+                      View details<span className="sr-only"> for {item.name}</span>
+                    </Link>
+                    {available ? (
+                      <Link href={detailPath + "?book=1"} className="inline-flex min-h-10 items-center justify-center rounded-lg bg-[#c8e889] px-2 text-center font-semibold text-[#19211c] !no-underline hover:bg-[#d7eeac]">
+                        Book now<span className="sr-only"> for {item.name}</span>
+                      </Link>
+                    ) : <button type="button" disabled className="min-h-10">Book now</button>}
+                  </div>
+                </div>
+              </div>
+            </article>
+          );
+        })}
       </div>
     </section>
   );
