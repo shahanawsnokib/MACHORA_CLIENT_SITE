@@ -52,7 +52,7 @@
   color-scheme: dark;
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-  --background: oklch(0.16 0.018 158);
+  --background: #111812;
   --foreground: oklch(0.96 0.012 105);
   --card: oklch(0.205 0.022 158);
   --card-foreground: oklch(0.96 0.012 105);
@@ -102,9 +102,6 @@
 
   body {
     @apply bg-background text-foreground;
-    background-image:
-      radial-gradient(ellipse at 50% -35%, oklch(0.29 0.04 155 / 38%), transparent 58%),
-      linear-gradient(180deg, oklch(0.17 0.022 158), oklch(0.145 0.018 158));
   }
 
   ::selection {
