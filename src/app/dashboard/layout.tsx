@@ -1,0 +1,17 @@
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
+// import { AppSidebar } from "@/components/app-sidebar"
+import { DashboardSidebar } from "../components/DashboardSidebar";
+
+const deshboardlayout = ({ children }: { children: React.ReactNode }) => {
+    return (
+    <SidebarProvider>
+      <DashboardSidebar />
+      <main>
+        <SidebarTrigger />
+        {children}
+      </main>
+    </SidebarProvider>
+    );
+};
+
+export default deshboardlayout;

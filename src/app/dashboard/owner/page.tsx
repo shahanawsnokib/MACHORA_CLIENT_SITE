@@ -1,6 +1,6 @@
 import React from 'react';
 
-const ownerDeshboardPage = () => {
+const ownerDashboardPage = () => {
     return (
         <div>
             ownerDeshboardPage
@@ -8,4 +8,4 @@ const ownerDeshboardPage = () => {
     );
 };
 
-export default ownerDeshboardPage;
+export default ownerDashboardPage;

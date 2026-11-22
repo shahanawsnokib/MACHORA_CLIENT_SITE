@@ -46,10 +46,10 @@ function AccountMenu({
   const firstInitial = user.name.trim().charAt(0).toUpperCase();
   const dashboardHref =
     user.role === "Admin"
-      ? "/deshBoard/admin"
+      ? "/dashboard/admin"
       : user.role === "Owner"
-        ? "/deshBoard/owner"
-        : "/deshBoard/customer";
+        ? "/dashboard/owner"
+        : "/dashboard/customer";
 
   return (
     <details className="group relative">

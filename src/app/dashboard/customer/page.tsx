@@ -1,6 +1,6 @@
 import React from 'react';
 
-const customerDeshboardPage = () => {
+const customerDashboardPage = () => {
     return (
         <div>
             customerDeshboardPage
@@ -9,4 +9,4 @@ const customerDeshboardPage = () => {
     );
 };
 
-export default customerDeshboardPage;
+export default customerDashboardPage;
