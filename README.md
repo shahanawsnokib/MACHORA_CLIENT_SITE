@@ -2,7 +2,7 @@
 
 MACHORA is an equipment rental marketplace. Customers can browse approved listings, save favorites, and book equipment. Owners manage their listings. Administrators review equipment and manage user roles and rentals.
 
-Live URL: Pending deployment.
+Live URL: https://machora-client-site.vercel.app/
 
 ## Run locally
 
