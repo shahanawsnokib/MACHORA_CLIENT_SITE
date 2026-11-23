@@ -11,16 +11,25 @@ import { rentalApi, type Equipment } from "@/lib/rental-api";
 
 type Booking = {
   _id: string; equipmentName: string; customerName: string; ownerName: string;
-  start: string; end: string; createdAt: string; quantity: number; total: number;
+  start: string; end: string; days?: number; paidAt?: string; createdAt: string; quantity: number; total: number;
   status: string; paymentStatus: string; paymentMethod?: string; phone?: string; address?: string; notes?: string;
 };
+type Payment = { amount: number; paidAt: string };
 type User = { _id: string; name: string; email: string; role?: string; createdAt: string; image?: string | null; phone?: string; address?: string };
+
+function rentalDuration(booking: Booking) {
+  // Older bookings may only have their start and end dates.
+  const days = booking.days ?? (Date.parse(booking.end) - Date.parse(booking.start)) / 86_400_000 + 1;
+  if (!Number.isInteger(days) || days < 1) return "—";
+  return days === 1 ? "1 day" : days + " days";
+}
 
 const fields = ["name", "description", "location", "condition", "brand", "model", "terms"] as const;
 
 export default function RentalDashboard({ role, section }: { role: DashboardRole; section?: Exclude<DashboardSection, "profile"> }) {
   const [items, setItems] = useState<Equipment[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [payments, setPayments] = useState<Payment[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [editingUser, setEditingUser] = useState<User>();
   const [savingUser, setSavingUser] = useState(false);
@@ -41,11 +50,13 @@ export default function RentalDashboard({ role, section }: { role: DashboardRole
       overview || section === "listings" ? rentalApi<Equipment[]>(equipmentPath, {}, true) : Promise.resolve([]),
       overview || section === "rentals" ? rentalApi<Booking[]>("/bookings", {}, true) : Promise.resolve([]),
       role === "Admin" && (overview || section === "users") ? rentalApi<User[]>("/admin/users", {}, true) : Promise.resolve([]),
-    ]).then(([equipment, rentals, accounts]) => {
+      overview && role !== "Customer" ? rentalApi<Payment[]>("/analytics/payments", {}, true) : Promise.resolve([]),
+    ]).then(([equipment, rentals, accounts, paymentRecords]) => {
       if (!current) return;
       setItems(equipment);
       setBookings(rentals);
       setUsers(accounts);
+      setPayments(paymentRecords);
       setMessage((previous) => previous === "Loading dashboard…" ? "" : previous);
     }).catch((error) => { if (current) setMessage(error.message); });
     return () => { current = false; };
@@ -105,12 +116,23 @@ export default function RentalDashboard({ role, section }: { role: DashboardRole
   }
 
   const completed = bookings.filter((row) => row.status === "Completed").length;
-  const paid = bookings.filter((row) => row.paymentStatus === "Paid");
-  const revenue = paid.reduce((total, row) => total + row.total, 0);
+  // Stripe amounts are stored in poisha. Manual payments are stored on bookings.
+  const manualPayments = bookings
+    .filter((row) => row.paymentMethod !== "Stripe" && row.paymentStatus === "Paid")
+    .map((row) => ({ amount: Math.round(row.total * 100), paidAt: row.paidAt || row.createdAt }));
+  const allPayments = [...payments, ...manualPayments];
+  const revenue = allPayments.reduce((total, payment) => total + payment.amount, 0) / 100;
   const monthly = new Map<string, number>();
-  for (const row of role === "Admin" ? bookings : paid) {
-    const month = row.createdAt.slice(0, 7);
-    monthly.set(month, (monthly.get(month) || 0) + (role === "Admin" ? 1 : row.total));
+  if (role === "Admin") {
+    for (const booking of bookings) {
+      const month = booking.createdAt.slice(0, 7);
+      monthly.set(month, (monthly.get(month) || 0) + 1);
+    }
+  } else {
+    for (const payment of allPayments) {
+      const month = payment.paidAt.slice(0, 7);
+      monthly.set(month, (monthly.get(month) || 0) + payment.amount / 100);
+    }
   }
 
   const hasOverview = role !== "Customer";
@@ -172,7 +194,7 @@ export default function RentalDashboard({ role, section }: { role: DashboardRole
         ))}
       </dl>
       {monthly.size > 0 && <div className={panel + " space-y-2"}>
-        <h3>{role === "Admin" ? "Monthly bookings" : "Monthly earnings by booking date"}</h3>
+        <h3>{role === "Admin" ? "Monthly bookings" : "Monthly earnings"}</h3>
         {[...monthly].sort().map(([month, value]) => <div key={month} className="flex items-center gap-3">
           <span className="w-17 shrink-0 text-sm text-[#bac8b9]">{month}</span>
           <meter aria-label={month} className="h-4 flex-1 accent-[#c8e889]" value={value} max={monthlyMaximum} />
@@ -183,10 +205,10 @@ export default function RentalDashboard({ role, section }: { role: DashboardRole
     {(section === "rentals" || (overview && role === "Customer")) && <section id="rentals" className={panel + " scroll-mt-5 space-y-3"}>
       <h2 className="text-xl font-bold">{role === "Admin" ? "All rentals" : role === "Customer" ? "My rentals" : "Equipment rentals"}</h2>
       {bookings.length ? <div className="overflow-x-auto"><table className={hasOverview ? "min-w-[640px] text-sm" : ""}>
-        <thead><tr><th>Equipment</th>{role !== "Customer" && <th>Customer</th>}{role === "Admin" && <th>Owner</th>}<th>Dates</th><th>Booked</th><th>Qty</th><th>Total</th><th>Payment</th><th>Status</th>{role === "Admin" && <th>Actions</th>}</tr></thead>
+        <thead><tr><th>Equipment</th>{role !== "Customer" && <th>Customer</th>}{role === "Admin" && <th>Owner</th>}<th>Dates</th>{hasOverview && <th>Duration</th>}<th>Booked</th><th>Qty</th><th>Total</th><th>Payment</th><th>Status</th>{role === "Admin" && <th>Actions</th>}</tr></thead>
         <tbody>{bookings.map((row) => <tr key={row._id}>
           <td>{row.equipmentName}</td>{role !== "Customer" && <td className="min-w-40"><p className="font-medium">{row.customerName}</p>{row.phone && <p className="text-xs text-[#bac8b9]">{row.phone}</p>}{row.address && <p className="text-xs text-[#bac8b9]">{row.address}</p>}{row.notes && <p className="mt-1 text-xs text-[#bac8b9]">Notes: {row.notes}</p>}</td>}{role === "Admin" && <td>{row.ownerName}</td>}
-          <td>{row.start.slice(0, 10)} – {row.end.slice(0, 10)}</td><td>{row.createdAt.slice(0, 10)}</td><td>{row.quantity}</td><td>৳{row.total}</td><td><p>{row.paymentStatus}</p>{row.paymentMethod && <p className="text-xs text-[#bac8b9]">{row.paymentMethod}</p>}</td><td>{row.status}</td>
+          <td>{row.start.slice(0, 10)} – {row.end.slice(0, 10)}</td>{hasOverview && <td>{rentalDuration(row)}</td>}<td>{row.createdAt.slice(0, 10)}</td><td>{row.quantity}</td><td>৳{row.total}</td><td><p>{row.paymentStatus}</p>{row.paymentMethod && <p className="text-xs text-[#bac8b9]">{row.paymentMethod}</p>}</td><td>{row.status}</td>
           {role === "Admin" && <td><div className="flex flex-wrap gap-2">
             {row.paymentMethod !== "Stripe" && <button onClick={() => save("/admin/bookings/" + row._id, "PATCH", { paymentStatus: row.paymentStatus === "Paid" ? "Unpaid" : "Paid" }, "Payment status updated.")}>{row.paymentStatus === "Paid" ? "Mark unpaid" : "Mark paid"}</button>}
             {row.status === "Confirmed" && <><button onClick={() => save("/admin/bookings/" + row._id, "PATCH", { status: "Completed" }, "Rental completed.")}>Complete</button>{row.paymentMethod !== "Stripe" && <button onClick={() => save("/admin/bookings/" + row._id, "PATCH", { status: "Cancelled" }, "Rental cancelled.")}>Cancel</button>}</>}

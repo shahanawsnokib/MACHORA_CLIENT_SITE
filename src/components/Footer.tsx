@@ -106,7 +106,20 @@ export default function Footer() {
 
         <div className="flex flex-col gap-4 pt-6 text-xs text-[#77827a] sm:flex-row sm:items-center sm:justify-between">
           <p>&copy; {new Date().getFullYear()} MACHORA Marketplace</p>
-          <div className="flex gap-5">
+          <div className="flex items-center gap-5">
+            <button
+              type="button"
+              aria-label="Share on X"
+              className="hover:text-[#eef1e8]"
+              onClick={() => {
+                const url = encodeURIComponent(window.location.origin);
+                window.open("https://x.com/intent/post?url=" + url, "_blank", "noopener,noreferrer");
+              }}
+            >
+              <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M18.9 2H22l-6.8 7.8L23.2 22h-6.3L12 14.6 5.6 22H2.4l7.3-8.4L1.8 2h6.4l4.7 7.1L18.9 2ZM17.8 20h1.7L7.2 3.9H5.4L17.8 20Z" />
+              </svg>
+            </button>
             <Link href="/privacy" className="hover:text-[#eef1e8]">Privacy</Link>
             <Link href="/rental-tearms" className="hover:text-[#eef1e8]">Terms</Link>
             <span>Built for Bangladesh</span>
