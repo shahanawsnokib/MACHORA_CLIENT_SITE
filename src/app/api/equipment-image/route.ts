@@ -1,6 +1,7 @@
-import { auth } from "@/lib/auth";
+import { getAuth } from "@/lib/auth";
 
 export async function POST(request: Request) {
+  const auth = await getAuth();
   const session = await auth.api.getSession({ headers: request.headers });
   if (!session) return Response.json({ message: "Please sign in." }, { status: 401 });
   if (!["Owner", "Admin"].includes(session.user.role || "")) {

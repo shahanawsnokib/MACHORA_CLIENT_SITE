@@ -73,3 +73,9 @@ export const auth = betterAuth({
     client,
   }),
 });
+
+// Wait for MongoDB before using Better Auth. The driver reuses an open connection.
+export async function getAuth() {
+  await client.connect();
+  return auth;
+}
