@@ -272,7 +272,7 @@ function HomePage() {
         </div>
         <div className="rounded-xl border border-white/15 p-6">
           <h2 className="text-2xl font-bold">How it works</h2>
-          <p className="mt-3">Find equipment, pick your dates and quantity, then confirm your booking. Arrange payment manually.</p>
+          <p className="mt-3">Find equipment, pick your dates and quantity, then pay securely through Stripe Checkout.</p>
           <Link className="mt-3 inline-block underline" href="/how_it_works">See rental steps</Link>
         </div>
       </section>

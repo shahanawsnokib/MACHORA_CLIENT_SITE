@@ -4,15 +4,16 @@ import { showToast } from "@/lib/toast";
 
 import { ArrowLeft, CalendarDays, Heart, MapPin, Package } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 import { rentalApi, type Equipment } from "@/lib/rental-api";
 
 export default function RentalDetails({ id, canBook, openBooking, phone, address }: { id: string; canBook: boolean; openBooking: boolean; phone?: string; address?: string }) {
+  const router = useRouter();
   const [item, setItem] = useState<Equipment>();
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState("");
   const [bookingError, setBookingError] = useState("");
-  const [booked, setBooked] = useState(false);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -29,22 +30,15 @@ export default function RentalDetails({ id, canBook, openBooking, phone, address
   async function submitBooking(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const fields = Object.fromEntries(new FormData(event.currentTarget));
-    const submitter = (event.nativeEvent as SubmitEvent).submitter;
-    const paymentMethod = submitter instanceof HTMLButtonElement && submitter.value === "Stripe" ? "Stripe" : "Cash on delivery";
     setBusy(true);
     setBookingError("");
     try {
       const booking = await rentalApi<{ checkoutUrl?: string }>("/bookings", {
         method: "POST",
-        body: JSON.stringify({ ...fields, equipmentId: id, paymentMethod }),
+        body: JSON.stringify({ ...fields, equipmentId: id, paymentMethod: "Stripe" }),
       }, true);
-      if (paymentMethod === "Stripe") {
-        if (!booking.checkoutUrl) throw new Error("Could not open Stripe Checkout.");
-        window.location.assign(booking.checkoutUrl);
-        return;
-      }
-      setBooked(true);
-      showToast("Booking confirmed. Pay on delivery.");
+      if (!booking.checkoutUrl) throw new Error("Could not open Stripe Checkout.");
+      window.location.assign(booking.checkoutUrl);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Booking failed.";
       setBookingError(message);
@@ -78,46 +72,6 @@ export default function RentalDetails({ id, canBook, openBooking, phone, address
   const price = item.price.toLocaleString("en-BD");
   const detailPath = "/browse_equipment/" + id;
 
-  if (openBooking && canBook && quantity > 0) {
-    return (
-      <main className="rental-form mx-auto w-full max-w-2xl px-5 py-8 sm:py-12">
-        <Link href={detailPath} className="mb-5 inline-flex items-center gap-2 text-sm text-[#c8e889]">
-          <ArrowLeft size={16} aria-hidden="true" /> Back to equipment details
-        </Link>
-        <section className="rounded-2xl border border-white/10 bg-[#19231c] p-5 sm:p-8">
-          <h1 className="text-2xl font-semibold sm:text-3xl">Book {item.name}</h1>
-          <p className="mt-2 text-sm text-[#bac8b9]">৳{price} · {item.rentalType} · {quantity} available</p>
-
-          {booked ? (
-            <div className="mt-6 space-y-3">
-              <p role="status" className="font-medium text-[#c8e889]">Booking confirmed. Pay when the equipment is delivered.</p>
-              <Link href="/dashboard/customer/my-rentals">View my rentals</Link>
-            </div>
-          ) : (
-            <form onSubmit={submitBooking} className="mt-6 space-y-5">
-              <fieldset disabled={busy} className="grid gap-4 text-sm sm:grid-cols-2">
-                <label>Start date<input required type="date" name="start" /></label>
-                <label>End date<input required type="date" name="end" /></label>
-                <label>Quantity<input required type="number" name="quantity" min="1" max={quantity} defaultValue="1" /></label>
-                <label>Contact number<input required type="tel" name="phone" autoComplete="tel" defaultValue={phone} /></label>
-                <label className="sm:col-span-2">Delivery address<textarea required rows={2} name="address" autoComplete="street-address" defaultValue={address} /></label>
-                <label className="sm:col-span-2">Notes <span className="text-[#bac8b9]">(optional)</span><textarea rows={2} name="notes" /></label>
-              </fieldset>
-              {bookingError && <p role="alert" className="text-sm text-red-300">{bookingError}</p>}
-              <div className="grid gap-3 border-t border-white/10 pt-5 sm:grid-cols-2">
-                <button type="submit" value="Cash on delivery" disabled={busy}>{busy ? "Booking…" : "Cash on delivery"}</button>
-                <button type="submit" value="Stripe" disabled={busy} className="border border-white/15 !bg-transparent !text-[#c8e889]">
-                  Pay online
-                </button>
-              </div>
-            </form>
-          )}
-        </section>
-      </main>
-    );
-  }
-
-
   const facts = [
     ["Brand", item.brand],
     ["Model", item.model],
@@ -127,6 +81,34 @@ export default function RentalDetails({ id, canBook, openBooking, phone, address
 
   return (
     <main className="rental-form mx-auto w-full max-w-7xl px-5 py-8 sm:px-8 sm:py-12">
+      {openBooking && canBook && quantity > 0 && (
+        <dialog
+          ref={(dialog) => { if (dialog && !dialog.open) dialog.showModal(); }}
+          aria-labelledby="booking-title"
+          onClose={() => router.replace(detailPath)}
+          className="m-auto max-h-[90vh] w-[calc(100%_-_2rem)] max-w-2xl overflow-auto rounded-2xl border border-white/10 bg-[#19231c] p-5 text-white backdrop:bg-black/70 sm:p-8"
+        >
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 id="booking-title" className="text-2xl font-semibold">Book {item.name}</h2>
+            <Link href={detailPath} className="text-sm text-[#c8e889] underline">Cancel booking</Link>
+          </div>
+          <p className="mt-2 text-sm text-[#bac8b9]">৳{price} · {item.rentalType} · {quantity} available</p>
+          <form onSubmit={submitBooking} className="mt-6 space-y-5">
+            <fieldset disabled={busy} className="grid gap-4 text-sm sm:grid-cols-2">
+              <label>Start date<input required type="date" name="start" /></label>
+              <label>End date<input required type="date" name="end" /></label>
+              <label>Quantity<input required type="number" name="quantity" min="1" max={quantity} defaultValue="1" /></label>
+              <label>Contact number<input required type="tel" name="phone" autoComplete="tel" defaultValue={phone} /></label>
+              <label className="sm:col-span-2">Delivery address<textarea required rows={2} name="address" autoComplete="street-address" defaultValue={address} /></label>
+              <label className="sm:col-span-2">Notes <span className="text-[#bac8b9]">(optional)</span><textarea rows={2} name="notes" /></label>
+            </fieldset>
+            {bookingError && <p role="alert" className="text-sm text-red-300">{bookingError}</p>}
+            <div className="flex flex-wrap items-center gap-4 border-t border-white/10 pt-5">
+              <button type="submit" disabled={busy}>{busy ? "Opening Stripe…" : "Continue to Stripe Checkout"}</button>
+            </div>
+          </form>
+        </dialog>
+      )}
       <Link href="/browse_equipment" className="mb-6 inline-flex items-center gap-2 text-sm text-[#c8e889] !no-underline hover:underline">
         <ArrowLeft size={16} aria-hidden="true" /> All equipment
       </Link>

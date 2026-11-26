@@ -19,7 +19,7 @@ Use `http://localhost:3000/api/auth/callback/google` as an authorized Google OAu
 
 ## Bookings and payment
 
-A customer selects rental dates and quantity. **Cash on delivery** confirms the rental as unpaid until an administrator marks it paid. **Pay online** reserves the equipment and opens Stripe Checkout. The success page checks for payment confirmation from the server.
+A customer selects rental dates and quantity. Confirming a new booking reserves the equipment and opens Stripe Checkout. The success page checks for payment confirmation from the server.
 
 ## Main packages
 
