@@ -208,7 +208,12 @@ export default function RentalDashboard({ role, section }: { role: DashboardRole
         <thead><tr><th>Equipment</th>{role !== "Customer" && <th>Customer</th>}{role === "Admin" && <th>Owner</th>}<th>Dates</th>{hasOverview && <th>Duration</th>}<th>Booked</th><th>Qty</th><th>Total</th><th>Payment</th><th>Status</th>{role === "Admin" && <th>Actions</th>}</tr></thead>
         <tbody>{bookings.map((row) => <tr key={row._id}>
           <td>{row.equipmentName}</td>{role !== "Customer" && <td className="min-w-40"><p className="font-medium">{row.customerName}</p>{row.phone && <p className="text-xs text-[#bac8b9]">{row.phone}</p>}{row.address && <p className="text-xs text-[#bac8b9]">{row.address}</p>}{row.notes && <p className="mt-1 text-xs text-[#bac8b9]">Notes: {row.notes}</p>}</td>}{role === "Admin" && <td>{row.ownerName}</td>}
-          <td>{row.start.slice(0, 10)} – {row.end.slice(0, 10)}</td>{hasOverview && <td>{rentalDuration(row)}</td>}<td>{row.createdAt.slice(0, 10)}</td><td>{row.quantity}</td><td>৳{row.total}</td><td><p>{row.paymentStatus}</p>{row.paymentMethod && <p className="text-xs text-[#bac8b9]">{row.paymentMethod}</p>}</td><td>{row.status}</td>
+          <td>{row.start.slice(0, 10)} – {row.end.slice(0, 10)}</td>{hasOverview && <td>{rentalDuration(row)}</td>}<td>{row.createdAt.slice(0, 10)}</td><td>{row.quantity}</td><td>৳{row.total}</td><td><p>{row.paymentStatus}</p>{row.paymentMethod && <p className="text-xs text-[#bac8b9]">{row.paymentMethod}</p>}</td><td>
+            <p>{row.status}</p>
+            {role === "Customer" && row.paymentMethod === "Stripe" && row.status === "Awaiting payment" && (
+              <Link href={"/payment/success?booking=" + row._id}>Check payment</Link>
+            )}
+          </td>
           {role === "Admin" && <td><div className="flex flex-wrap gap-2">
             {row.paymentMethod !== "Stripe" && <button onClick={() => save("/admin/bookings/" + row._id, "PATCH", { paymentStatus: row.paymentStatus === "Paid" ? "Unpaid" : "Paid" }, "Payment status updated.")}>{row.paymentStatus === "Paid" ? "Mark unpaid" : "Mark paid"}</button>}
             {row.status === "Confirmed" && <><button onClick={() => save("/admin/bookings/" + row._id, "PATCH", { status: "Completed" }, "Rental completed.")}>Complete</button>{row.paymentMethod !== "Stripe" && <button onClick={() => save("/admin/bookings/" + row._id, "PATCH", { status: "Cancelled" }, "Rental cancelled.")}>Cancel</button>}</>}

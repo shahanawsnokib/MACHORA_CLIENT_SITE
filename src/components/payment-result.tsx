@@ -26,7 +26,10 @@ export default function PaymentResult({ bookingId, result }: { bookingId: string
 
     async function load() {
       try {
-        const row = await rentalApi<BookingPayment>(path, {}, true);
+        let row = await rentalApi<BookingPayment>(path, {}, true);
+        if (result === "success" && row.status === "Awaiting payment") {
+          row = await rentalApi<BookingPayment>(path + "/sync", { method: "POST" }, true);
+        }
         if (stopped) return;
         setError("");
         setBooking(row);
